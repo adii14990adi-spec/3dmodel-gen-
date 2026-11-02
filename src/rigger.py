@@ -159,6 +159,8 @@ class AutoRigger:
                 raise RuntimeError(
                     f"Blender executable '{self.config.blender_executable}' not found in PATH."
                 )
+        elif backend == RiggingBackend.UE5_MANNY:
+            skeleton, joints_idx, weights_val = self._rig_ue5_manny(watertight_mesh)
         else:
             skeleton, joints_idx, weights_val = self._rig_builtin_humanoid(watertight_mesh)
 
@@ -203,6 +205,54 @@ class AutoRigger:
     ) -> tuple[RiggedSkeleton, np.ndarray, np.ndarray]:
         """Estimate 25 anatomical T-pose joints and compute heat-diffused LBS weights."""
         skeleton = self.fit_humanoid_skeleton(mesh)
+        joints_idx, weights_val = self.compute_lbs_skin_weights(
+            mesh=mesh,
+            skeleton=skeleton,
+            smooth_iterations=self.config.weight_smooth_iterations,
+        )
+        return skeleton, joints_idx, weights_val
+
+    def _rig_ue5_manny(
+        self,
+        mesh: trimesh.Trimesh,
+    ) -> tuple[RiggedSkeleton, np.ndarray, np.ndarray]:
+        """Fit a 23-bone Unreal Engine 5 Mannequin / MetaHuman skeleton (`root`, `pelvis`, `_l`/`_r`)."""
+        base = self.fit_humanoid_skeleton(mesh)
+        src_pos = base.joint_positions
+        # Map 25-bone humanoid indices onto the 23-bone UE5 Manny / MetaHuman hierarchy
+        ue5_defs: list[tuple[str, int, str, np.ndarray]] = [
+            ("root", -1, "pelvis", np.array([0.0, float(mesh.bounds[0, 1]), 0.0], dtype=np.float64)),
+            ("pelvis", 0, "pelvis", src_pos[0]),
+            ("spine_01", 1, "spine", src_pos[1]),
+            ("spine_02", 2, "spine", src_pos[2]),
+            ("spine_03", 3, "chest", src_pos[3]),
+            ("neck_01", 4, "neck", src_pos[4]),
+            ("head", 5, "head", src_pos[5]),
+            ("clavicle_l", 4, "left_arm", src_pos[7]),
+            ("upperarm_l", 7, "left_arm", src_pos[8]),
+            ("lowerarm_l", 8, "left_arm", src_pos[9]),
+            ("hand_l", 9, "left_arm", src_pos[10]),
+            ("clavicle_r", 4, "right_arm", src_pos[12]),
+            ("upperarm_r", 11, "right_arm", src_pos[13]),
+            ("lowerarm_r", 12, "right_arm", src_pos[14]),
+            ("hand_r", 13, "right_arm", src_pos[15]),
+            ("thigh_l", 1, "left_leg", src_pos[17]),
+            ("calf_l", 15, "left_leg", src_pos[18]),
+            ("foot_l", 16, "left_leg", src_pos[19]),
+            ("ball_l", 17, "left_leg", src_pos[20]),
+            ("thigh_r", 1, "right_leg", src_pos[21]),
+            ("calf_r", 19, "right_leg", src_pos[22]),
+            ("foot_r", 20, "right_leg", src_pos[23]),
+            ("ball_r", 21, "right_leg", src_pos[24]),
+        ]
+        skeleton = RiggedSkeleton(
+            joint_names=[d[0] for d in ue5_defs],
+            parent_indices=[d[1] for d in ue5_defs],
+            joint_positions=np.stack([d[3] for d in ue5_defs], axis=0),
+            regions=[d[2] for d in ue5_defs],
+            backend_used="ue5_manny",
+            metadata={"skeleton_standard": "UE5_Manny_MetaHuman_23Bone", "ue5_compatible": True},
+        )
         joints_idx, weights_val = self.compute_lbs_skin_weights(
             mesh=mesh,
             skeleton=skeleton,
@@ -449,6 +499,8 @@ bpy.ops.export_scene.gltf(filepath={str(glb_path)!r}, export_format='GLB')
         # Point-to-segment distance matrix (N_verts, N_joints)
         weights = np.zeros((n_verts, n_joints), dtype=np.float64)
         for j in range(n_joints):
+            if skeleton.joint_names[j] == "root":
+                continue
             a = seg_a[j]
             b = seg_b[j]
             ab = b - a
@@ -754,8 +806,9 @@ bpy.ops.export_scene.gltf(filepath={str(glb_path)!r}, export_format='GLB')
             "right_leg": (248, 113, 113),
         }
 
+        n_j = len(skeleton.joint_names)
         panels: list[np.ndarray] = []
-        for deg, title in ((0.0, "0° Front Armature (25 Joints)"), (90.0, "90° Sagittal Spine & Rig")):
+        for deg, title in ((0.0, f"0° Front Armature ({n_j} Joints)"), (90.0, "90° Sagittal Spine & Rig")):
             rad = np.deg2rad(deg)
             c, s = float(np.cos(rad)), float(np.sin(rad))
             rot = np.array([[c, 0.0, s], [0.0, 1.0, 0.0], [-s, 0.0, c]], dtype=np.float32)

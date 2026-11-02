@@ -89,6 +89,9 @@ def _format_metrics_markdown(summary: dict[str, Any]) -> str:
         else "Disabled"
     )
     side_badge = f"YES (`{side.get('backend_used')}`)" if side.get("enabled") else "Disabled"
+    fbx_badge = "Exported (`character_ue5.fbx`, `-Y` Fwd / `Z` Up)" if m.get("ue5_fbx_exported") else "N/A"
+    vol = float(m.get("volume_m3", 0.0))
+    area = float(m.get("surface_area_m2", 0.0))
     return (
         f"### Reconstruction & Rigging Quality Summary\n"
         f"| Metric | Value |\n"
@@ -99,9 +102,10 @@ def _format_metrics_markdown(summary: dict[str, Any]) -> str:
         f"| **Front/Back Silhouette IoU** | `{pre.get('silhouette_iou', 0.0):.4f}` |\n"
         f"| **Watertight Manifold** | **{wt_badge}** (Euler `{m['euler_number']}`) |\n"
         f"| **Humanoid Armature (.glb)** | **{rig_badge}** |\n"
+        f"| **Unreal Engine 5 Skeletal .FBX** | **{fbx_badge}** |\n"
         f"| **Mesh Complexity** | `{m['geometry_vertices']:,}` vertices / `{m['faces']:,}` triangles |\n"
         f"| **Character Dimensions (W × H × D)** | `{dim_str}` (Grounded at `Y=0`) |\n"
-        f"| **Volume / Surface Area** | `{m['volume_m3']:.4f} m³` / `{m['surface_area_m2']:.3f} m²` |\n"
+        f"| **Volume / Surface Area** | `{vol:.4f} m³` / `{area:.3f} m²` |\n"
         f"| **Total Pipeline Latency** | `{summary['elapsed_seconds']:.2f} s` |"
     )
 
@@ -155,6 +159,7 @@ def _ensure_initial_demo_artifacts(settings: AppSettings) -> dict[str, Any]:
 
     return {
         "glb": _p("character.glb"),
+        "fbx": _p("character_ue5.fbx"),
         "obj_zip": _p("character_obj_bundle.zip"),
         "preview": _p("preprocessed_preview.png"),
         "turnaround": _p("mesh_turnaround.png"),
@@ -178,7 +183,7 @@ def build_gradio_blocks(
     initial = _ensure_initial_demo_artifacts(cfg) if warm_start else {}
     sample_str = str(cfg.sample_image_path) if cfg.sample_image_path.is_file() else None
 
-    def run_full_pipeline(
+    def _execute_ui_run(
         image: Image.Image | None,
         engine_name: str,
         seg_backend: str,
@@ -192,6 +197,9 @@ def build_gradio_blocks(
         depth_scale: float,
         relief_strength: float,
         texture_mode: str,
+        ue5_subsurf: int,
+        ue5_samples: int,
+        ue5_adapt_ref: bool,
     ) -> tuple[
         str | None,
         Image.Image | None,
@@ -203,9 +211,13 @@ def build_gradio_blocks(
         dict[str, Any],
         str | None,
         str | None,
+        str | None,
     ]:
         if image is None:
-            raise gr.Error("Please upload or select a dual-view T-pose character reference image.")
+            if sample_str is not None:
+                image = Image.open(sample_str).convert("RGB")
+            else:
+                raise gr.Error("Please upload or select a dual-view T-pose character reference image.")
 
         run_dir = ui_jobs_root / uuid.uuid4().hex[:10]
         run_dir.mkdir(parents=True, exist_ok=True)
@@ -230,6 +242,9 @@ def build_gradio_blocks(
                     "mc_resolution": int(mc_resolution),
                     "depth_scale": float(depth_scale),
                     "relief_strength": float(relief_strength),
+                    "ue5_subsurf_level": int(ue5_subsurf),
+                    "ue5_cycles_samples": int(ue5_samples),
+                    "ue5_adapt_reference": bool(ue5_adapt_ref),
                     "allow_fallback": True,
                 }
             ),
@@ -258,6 +273,7 @@ def build_gradio_blocks(
 
         summary = res.summary_dict()
         glb_file = res.postprocessed.exported_files.get("glb")
+        fbx_file = res.postprocessed.exported_files.get("fbx")
         zip_file = res.postprocessed.exported_files.get("obj_bundle")
         rig_img = res.rigging.preview_image if res.rigging is not None else None
         side_img = res.side_views.preview_quad_image if res.side_views is not None else None
@@ -272,7 +288,37 @@ def build_gradio_blocks(
             _format_metrics_markdown(summary),
             summary,
             str(glb_file) if glb_file else None,
+            str(fbx_file) if fbx_file else None,
             str(zip_file) if zip_file else None,
+        )
+
+    def run_ue5_highpoly_preset(
+        image: Image.Image | None,
+        seg_backend: str,
+        split_mode: str,
+        swap_views: bool,
+        side_backend: str,
+        ue5_subsurf: int,
+        ue5_samples: int,
+        ue5_adapt_ref: bool,
+    ) -> tuple[Any, ...]:
+        return _execute_ui_run(
+            image=image,
+            engine_name=ReconstructionEngineType.UE5_HIGHPOLY_BPY.value,
+            seg_backend=seg_backend,
+            split_mode=split_mode,
+            swap_views=swap_views,
+            side_backend=side_backend,
+            rigging_backend=RiggingBackend.UE5_MANNY.value,
+            mc_resolution=160,
+            target_faces=20000,
+            smoothing_iters=12,
+            depth_scale=0.55,
+            relief_strength=0.08,
+            texture_mode=TextureMode.UV_ATLAS.value,
+            ue5_subsurf=ue5_subsurf,
+            ue5_samples=ue5_samples,
+            ue5_adapt_ref=ue5_adapt_ref,
         )
 
     def run_preprocess_preview(
@@ -295,23 +341,24 @@ def build_gradio_blocks(
 
     with gr.Blocks(
         analytics_enabled=False,
-        title="Auto3D-Human | Dual-View T-Pose Image-to-3D Pipeline",
+        title="Auto3D-Human | Dual-View T-Pose & UE5 High-Poly Character Pipeline",
         fill_width=True,
     ) as demo:
         gr.HTML(
             """
             <div class="hero-banner">
-              <h1>Auto3D-Human — Rig-Ready Dual-View T-Pose Character Pipeline</h1>
+              <h1>Auto3D-Human — T-Pose Image-to-3D &amp; UE5 High-Poly Character Studio</h1>
               <p>
-                Automated splitting, foreground human segmentation, ±90° side-profile synthesis,
-                multi-view volumetric 3D reconstruction, watertight PBR
-                <code>.glb</code> / <code>.obj</code> export, and 25-joint humanoid armature + LBS skinning.
+                Dual-view turnaround segmentation, ±90° side-profile synthesis, multi-view volumetric 3D
+                reconstruction, <strong>Unreal Engine 5 High-Poly <code>bpy</code> Subdivision + SSS/PBR +
+                23-Bone Manny Skeletal <code>.FBX</code> / <code>.GLB</code> Generator</strong>, and
+                25-joint glTF humanoid auto-rigging.
               </p>
               <div class="hero-links">
                 <a href="/docs" target="_blank">FastAPI Swagger Docs (/docs)</a>
-                <a href="/api/v1/queue/stats" target="_blank">Worker Queue Stats (/api/v1/queue/stats)</a>
                 <a href="/api/v1/engines" target="_blank">Registered Engines (/api/v1/engines)</a>
-                <a href="/health" target="_blank">Health Status (/health)</a>
+                <a href="/api/v1/queue/stats" target="_blank">Worker Queue Stats (/api/v1/queue/stats)</a>
+                <a href="/health" target="_blank">Health &amp; BPY Status (/health)</a>
               </div>
             </div>
             """
@@ -323,14 +370,19 @@ def build_gradio_blocks(
                     value=sample_str,
                     type="pil",
                     label="Dual-View Reference Sheet (Aligned Front | Back T-Pose)",
-                    height=290,
+                    height=280,
                 )
 
                 with gr.Row():
                     run_btn = gr.Button("Reconstruct & Rig 3D Character", variant="primary", scale=2)
-                    preview_btn = gr.Button("Preview Alignment Only", variant="secondary", scale=1)
+                    ue5_btn = gr.Button(
+                        "Generate UE5 High-Poly Character (BPY)",
+                        variant="huggingface",
+                        scale=2,
+                    )
+                preview_btn = gr.Button("Preview Alignment Only", variant="secondary")
 
-                with gr.Accordion("Pipeline, Lateral Synthesis & Rigging Parameters", open=True):
+                with gr.Accordion("Pipeline, UE5 High-Poly BPY & Rigging Parameters", open=True):
                     with gr.Row():
                         engine_dd = gr.Dropdown(
                             choices=[e.value for e in ReconstructionEngineType],
@@ -351,8 +403,27 @@ def build_gradio_blocks(
                         rig_dd = gr.Dropdown(
                             choices=[r.value for r in RiggingBackend],
                             value=RiggingBackend.AUTO.value,
-                            label="Humanoid Auto-Rigging (.glb)",
+                            label="Humanoid / UE5 Auto-Rigging",
                         )
+                    with gr.Row():
+                        ue5_subsurf_slider = gr.Slider(
+                            minimum=1,
+                            maximum=3,
+                            step=1,
+                            value=2,
+                            label="UE5 BPY Subdivision Level",
+                        )
+                        ue5_samples_slider = gr.Slider(
+                            minimum=0,
+                            maximum=64,
+                            step=8,
+                            value=16,
+                            label="UE5 Cycles LookDev Samples (0 = Fast)",
+                        )
+                    ue5_adapt_chk = gr.Checkbox(
+                        value=False,
+                        label="Adapt UE5 PBR Outfit/Skin Palette to Uploaded Reference Sheet",
+                    )
                     with gr.Row():
                         split_dd = gr.Dropdown(
                             choices=[m.value for m in SplitMode],
@@ -417,22 +488,22 @@ def build_gradio_blocks(
                     with gr.TabItem("Interactive 3D Mesh (.glb)"):
                         model_3d = gr.Model3D(
                             value=initial.get("glb"),
-                            label="Watertight Rigged 3D Character (Orbit / Zoom / Pan)",
+                            label="Watertight / UE5 High-Poly Skinned 3D Character (Orbit / Zoom / Pan)",
                             clear_color=(0.10, 0.12, 0.16, 1.0),
                             height=450,
                         )
                         turnaround_out = gr.Image(
                             value=initial.get("turnaround"),
                             type="pil",
-                            label="Multi-Angle Shaded 3D Mesh Turnaround (0° / 45° / 90° / 180°)",
-                            height=220,
+                            label="Studio LookDev & Multi-Angle 3D Turnaround Sheet",
+                            height=230,
                         )
 
-                    with gr.TabItem("Humanoid Rig & ±90° Side Profiles"):
+                    with gr.TabItem("Humanoid / UE5 Rig & ±90° Side Profiles"):
                         rig_out = gr.Image(
                             value=initial.get("rig_preview"),
                             type="pil",
-                            label="Injected 25-Joint Standard Humanoid Armature (0° Front & 90° Sagittal)",
+                            label="Injected Humanoid / UE5 Mannequin Armature (0° Front & 90° Sagittal)",
                             height=330,
                         )
                         side_out = gr.Image(
@@ -471,22 +542,41 @@ def build_gradio_blocks(
                 metrics_md = gr.Markdown(
                     value=initial.get(
                         "markdown",
-                        "Upload a dual-view T-pose image and click **Reconstruct & Rig 3D Character**.",
+                        "Upload a dual-view T-pose image and click **Reconstruct & Rig 3D Character** "
+                        "or **Generate UE5 High-Poly Character (BPY)**.",
                     )
                 )
 
                 with gr.Row():
                     glb_dl = gr.File(
                         value=initial.get("glb"),
-                        label="Download Skinned .GLB (glTF 2.0 PBR + 25-Bone Rig)",
+                        label="Download Skinned .GLB (glTF 2.0 PBR + Rig)",
+                    )
+                    fbx_dl = gr.File(
+                        value=initial.get("fbx"),
+                        label="Download UE5 Skeletal .FBX (-Y Fwd / Z Up)",
                     )
                     obj_dl = gr.File(
                         value=initial.get("obj_zip"),
-                        label="Download .OBJ + .MTL + Texture (.ZIP)",
+                        label="Download .OBJ + .FBX + Script Bundle (.ZIP)",
                     )
 
+        common_outputs = [
+            model_3d,
+            turnaround_out,
+            rig_out,
+            side_out,
+            align_out,
+            atlas_out,
+            metrics_md,
+            json_out,
+            glb_dl,
+            fbx_dl,
+            obj_dl,
+        ]
+
         run_btn.click(
-            fn=run_full_pipeline,
+            fn=_execute_ui_run,
             inputs=[
                 input_img,
                 engine_dd,
@@ -501,19 +591,26 @@ def build_gradio_blocks(
                 depth_slider,
                 relief_slider,
                 tex_dd,
+                ue5_subsurf_slider,
+                ue5_samples_slider,
+                ue5_adapt_chk,
             ],
-            outputs=[
-                model_3d,
-                turnaround_out,
-                rig_out,
-                side_out,
-                align_out,
-                atlas_out,
-                metrics_md,
-                json_out,
-                glb_dl,
-                obj_dl,
+            outputs=common_outputs,
+        )
+
+        ue5_btn.click(
+            fn=run_ue5_highpoly_preset,
+            inputs=[
+                input_img,
+                seg_dd,
+                split_dd,
+                swap_chk,
+                side_dd,
+                ue5_subsurf_slider,
+                ue5_samples_slider,
+                ue5_adapt_chk,
             ],
+            outputs=common_outputs,
         )
 
         preview_btn.click(

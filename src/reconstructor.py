@@ -807,6 +807,42 @@ class PIFuHDEngine(BaseReconstructionEngine):
         )
 
 
+class UE5HighPolyBpyConnector(BaseReconstructionEngine):
+    """Unreal Engine 5 High-Poly Subdivision Character & Manny Rig Engine via Blender `bpy`."""
+
+    name = ReconstructionEngineType.UE5_HIGHPOLY_BPY.value
+    category = "ue5_production"
+    requires_gpu = False
+    description = (
+        "High-poly Catmull-Clark female anatomy, tailored outfit, NURBS hair groom, "
+        "procedural SSS/PBR shaders, and 23-bone UE5 Mannequin rig via Blender `bpy`."
+    )
+
+    def check_availability(self, config: ReconstructorConfig) -> tuple[bool, str]:
+        from src.ue5_bpy_generator import has_bpy_runtime
+
+        if has_bpy_runtime():
+            return True, "Ready (Blender Python `bpy` high-poly subdivision & UE5 FBX/GLB engine active)."
+        return False, "Blender Python (`bpy`) module is not installed in this environment."
+
+    def reconstruct(
+        self,
+        preprocessed: PreprocessedPair,
+        config: ReconstructorConfig,
+        side_views: SynthesizedSideViews | None = None,
+    ) -> RawReconstructionResult:
+        from src.ue5_bpy_generator import UE5HighPolyBpyEngine, has_bpy_runtime
+
+        if not has_bpy_runtime():
+            raise EngineNotAvailableError("Blender Python (`bpy`) runtime is unavailable.")
+        bundle = UE5HighPolyBpyEngine(
+            subsurf_level=config.ue5_subsurf_level,
+            cycles_samples=0,
+            adapt_to_reference=config.ue5_adapt_reference,
+        ).generate(preprocessed, output_dir=None)
+        return bundle.raw_result
+
+
 class EngineRegistry:
     """Registry managing primary and modular clothed-body reconstruction backends."""
 
@@ -814,6 +850,7 @@ class EngineRegistry:
         self._engines: dict[str, BaseReconstructionEngine] = {}
         for eng_cls in (
             VolumetricDualViewEngine,
+            UE5HighPolyBpyConnector,
             TrellisEngine,
             LGMEngine,
             TripoSREngine,

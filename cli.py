@@ -150,6 +150,24 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Fail instead of falling back to volumetric_sdf if neural weights are missing.",
     )
+    rec_group.add_argument(
+        "--ue5-subsurf",
+        type=int,
+        choices=[1, 2, 3],
+        default=2,
+        help="Catmull-Clark Subdivision level for `ue5_highpoly_bpy` engine (default: 2).",
+    )
+    rec_group.add_argument(
+        "--ue5-samples",
+        type=int,
+        default=24,
+        help="Cycles raytraced studio turnaround samples for `ue5_highpoly_bpy` (0 skips Cycles).",
+    )
+    rec_group.add_argument(
+        "--ue5-adapt-reference",
+        action="store_true",
+        help="Adapt UE5 PBR material colors & proportions from the uploaded turnaround sheet.",
+    )
 
     # Postprocessor & Auto-Rigging options
     post_group = parser.add_argument_group("Mesh Post-Processing, Export & Auto-Rigging")
@@ -269,13 +287,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     out_arg: Path = args.output
     explicit_file: Path | None = None
     export_formats: list[Literal["glb", "obj"]] = list(args.formats)
-    if out_arg.suffix.lower() in (".glb", ".obj"):
+    selected_engine = ReconstructionEngineType(args.engine)
+    if out_arg.suffix.lower() in (".glb", ".obj", ".fbx"):
         explicit_file = out_arg
         out_dir = out_arg.parent if str(out_arg.parent) != "" else Path(".")
         stem = out_arg.stem
-        req_fmt: Literal["glb", "obj"] = "glb" if out_arg.suffix.lower() == ".glb" else "obj"
-        if req_fmt not in export_formats:
-            export_formats.insert(0, req_fmt)
+        if out_arg.suffix.lower() == ".fbx" and selected_engine == ReconstructionEngineType.AUTO:
+            selected_engine = ReconstructionEngineType.UE5_HIGHPOLY_BPY
+        elif out_arg.suffix.lower() in (".glb", ".obj"):
+            req_fmt: Literal["glb", "obj"] = "glb" if out_arg.suffix.lower() == ".glb" else "obj"
+            if req_fmt not in export_formats:
+                export_formats.insert(0, req_fmt)
     else:
         out_dir = out_arg
         stem = args.input.stem or "character"
@@ -319,12 +341,15 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     rec_cfg = settings.reconstructor.model_copy(
         update={
-            "engine": ReconstructionEngineType(args.engine),
+            "engine": selected_engine,
             "device": args.device,
             "mc_resolution": args.mc_resolution,
             "depth_scale": args.depth_scale,
             "relief_strength": args.relief_strength,
             "allow_fallback": not args.strict_engine,
+            "ue5_subsurf_level": args.ue5_subsurf,
+            "ue5_cycles_samples": args.ue5_samples,
+            "ue5_adapt_reference": args.ue5_adapt_reference,
         }
     )
     post_cfg = PostProcessorConfig(

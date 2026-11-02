@@ -32,6 +32,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libglib2.0-0 \
         libgomp1 \
         libsm6 \
+        libice6 \
+        libxi6 \
+        libxfixes3 \
+        libxkbcommon0 \
         libxext6 \
         libxrender1 \
     && rm -rf /var/lib/apt/lists/*
@@ -55,7 +59,7 @@ RUN python3 -m pip install --upgrade pip setuptools wheel \
 
 COPY --chown=auto3d:auto3d assets/ /app/assets/
 COPY --chown=auto3d:auto3d src/ /app/src/
-COPY --chown=auto3d:auto3d app.py cli.py pyproject.toml README.md /app/
+COPY --chown=auto3d:auto3d app.py cli.py ue5_highpoly_character_bpy.py pyproject.toml README.md /app/
 
 USER auto3d
 

@@ -36,6 +36,7 @@ from src.pipeline import Auto3DHumanPipeline
 from src.postprocessor import HAS_OPEN3D
 from src.preprocessor import DualViewPreprocessor
 from src.reconstructor import MultiViewReconstructor, resolve_compute_device
+from src.ue5_bpy_generator import has_bpy_runtime
 from src.worker import JobQueueManager
 
 logger = logging.getLogger(__name__)
@@ -44,8 +45,10 @@ _SAFE_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{4,64}$")
 
 _MIME_TYPES: dict[str, str] = {
     ".glb": "model/gltf-binary",
+    ".fbx": "application/octet-stream",
     ".obj": "text/plain; charset=utf-8",
     ".mtl": "text/plain; charset=utf-8",
+    ".py": "text/x-python; charset=utf-8",
     ".png": "image/png",
     ".jpg": "image/jpeg",
     ".jpeg": "image/jpeg",
@@ -64,6 +67,7 @@ class HealthResponse(BaseModel):
     queue_backend: str
     uptime_seconds: float
     open3d_available: bool
+    bpy_available: bool
     sample_asset_ready: bool
 
 
@@ -184,6 +188,9 @@ def _build_pipeline_config(
     target_height: float,
     enable_rigging: bool,
     rigging_backend: RiggingBackend,
+    ue5_subsurf_level: int = 2,
+    ue5_cycles_samples: int = 24,
+    ue5_adapt_reference: bool = False,
 ) -> PipelineConfig:
     return PipelineConfig(
         preprocessor=PreprocessorConfig(
@@ -203,6 +210,9 @@ def _build_pipeline_config(
                 "mc_resolution": mc_resolution,
                 "depth_scale": depth_scale,
                 "relief_strength": relief_strength,
+                "ue5_subsurf_level": ue5_subsurf_level,
+                "ue5_cycles_samples": ue5_cycles_samples,
+                "ue5_adapt_reference": ue5_adapt_reference,
             }
         ),
         postprocessor=PostProcessorConfig(
@@ -258,6 +268,7 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
             queue_backend=queue_mgr.resolve_active_backend(),
             uptime_seconds=round(time.monotonic() - boot_time, 2),
             open3d_available=HAS_OPEN3D,
+            bpy_available=has_bpy_runtime(),
             sample_asset_ready=cfg.sample_image_path.is_file(),
         )
 
@@ -503,6 +514,38 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
         return _execute_reconstruction_job(
             cfg.sample_image_path, pipe_cfg, jobs_root, cfg.job_retention_count
         )
+
+    @api.post("/api/v1/ue5/generate", response_model=ReconstructionResponse, tags=["UE5 High-Poly BPY"])
+    def generate_ue5_character_endpoint(
+        file: Annotated[
+            UploadFile | None,
+            File(description="Optional dual-view turnaround sheet (uses sample sheet if omitted)"),
+        ] = None,
+        subsurf_level: Annotated[int, Form(ge=1, le=3)] = 2,
+        cycles_samples: Annotated[int, Form(ge=0, le=256)] = 24,
+        adapt_to_reference: Annotated[bool, Form()] = False,
+    ) -> ReconstructionResponse:
+        if not has_bpy_runtime():
+            raise HTTPException(
+                status_code=503,
+                detail="Blender Python (`bpy`) runtime is not installed in this environment.",
+            )
+        source_data: bytes | Path
+        if file is not None and file.filename:
+            source_data = _read_upload_bytes(file, cfg.max_upload_mb)
+        elif cfg.sample_image_path.is_file():
+            source_data = cfg.sample_image_path
+        else:
+            raise HTTPException(status_code=400, detail="No turnaround sheet provided.")
+
+        pipe_cfg = cfg.to_pipeline_config()
+        pipe_cfg.reconstructor.engine = ReconstructionEngineType.UE5_HIGHPOLY_BPY
+        pipe_cfg.reconstructor.allow_fallback = False
+        pipe_cfg.reconstructor.ue5_subsurf_level = subsurf_level
+        pipe_cfg.reconstructor.ue5_cycles_samples = cycles_samples
+        pipe_cfg.reconstructor.ue5_adapt_reference = adapt_to_reference
+        pipe_cfg.rigging.enabled = True
+        return _execute_reconstruction_job(source_data, pipe_cfg, jobs_root, cfg.job_retention_count)
 
     @api.get("/api/v1/jobs/{job_id}", tags=["Jobs"])
     def get_job_metadata(job_id: str) -> dict[str, Any]:

@@ -31,6 +31,11 @@
   - Computes anatomically gated capsule distances + **Laplacian heat-diffused Linear Blend Skinning (LBS)** weights (`WEIGHTS_0.sum() == 1.0`, identical across UV seams so joints deform cleanly without seam cracking) and injects glTF 2.0 `skins`, `JOINTS_0`, `WEIGHTS_0`, and column-major `inverseBindMatrices` directly into `.glb`.
   - Includes modular **`smplx`** (`.npz` template KDTree weight transfer) and **`blender`** (`blender --background --python` `ARMATURE_AUTO`) connectors.
 
+- **Unreal Engine 5 High-Poly `bpy` Character Generator (`ue5_highpoly_character_bpy.py`, `src/ue5_bpy_generator.py`)**
+  - Builds a **1.70m sculpt- and Nanite-ready high-poly Subdivision female character (`SK_UE5_RealisticFemale`)** directly via headless **Blender Python (`bpy` 4.5 LTS)** or standalone Blender (`blender --background --python ue5_highpoly_character_bpy.py`).
+  - Includes continuous quad-lofted head/torso/limb anatomy, 5-finger articulated T-pose hands, center-parted 162-strand NURBS wavy hair groom + scalp cap (`Principled Hair BSDF` Melanin), fitted V-neck spaghetti-strap camisole, distressed high-waisted skinny jeans with recessed cutout skin & frayed white cotton weft threads, grain leather belt + metallic double-ring buckle, silver pendant necklace, forearm tattoo shader, and platform sneakers.
+  - Rigged to the **23-bone Unreal Engine 5 Mannequin / MetaHuman hierarchy** (`root`, `pelvis`, `spine_01..03`, `clavicle_l/r`, `upperarm_l/r`, `lowerarm_l/r`, `hand_l/r`, `thigh_l/r`, `calf_l/r`, `foot_l/r`, `ball_l/r`, `neck_01`, `head`) and exports UE5-ready **`.fbx` (`-Y` Forward, `Z` Up, tangent space)**, skinned PBR **`.glb`**, and **Cycles raytraced 3-panel lookdev turnaround sheets**.
+
 - **Async Batch Worker Queue + FastAPI + Gradio Studio (`src/worker.py`, `src/server.py`, `app.py`)**
   - Offloads single (`/api/v1/jobs/submit`) and multi-character batch (`/api/v1/jobs/batch`) workloads onto **Celery + Redis** (when `redis` is configured, see `docker-compose.yml`) or a zero-config non-blocking **`ThreadPoolExecutor`** worker pool so port `7860` remains responsive under concurrent multi-user traffic.
 
@@ -53,10 +58,12 @@ auto3d-human/
 │   ├── side_synthesizer.py       # ±90° lateral profile synthesis (Anatomical / Zero123++ / SV3D)
 │   ├── reconstructor.py          # Multi-view 3D synthesis & Marching Cubes engines
 │   ├── postprocessor.py          # Taubin smoothing, quadric decimation, normals, GLB/OBJ export
-│   ├── rigger.py                 # 25-bone glTF 2.0 humanoid armature & LBS skinning injector
-│   ├── server.py                 # FastAPI synchronous & async queue REST endpoints
+│   ├── rigger.py                 # 25-bone glTF & 23-bone UE5 Manny armature + LBS skinning
+│   ├── ue5_bpy_generator.py      # Unreal Engine 5 High-Poly Blender `bpy` engine & exporters
+│   ├── server.py                 # FastAPI synchronous, UE5 BPY & async queue REST endpoints
 │   └── worker.py                 # Celery + Redis & ThreadPool async batch worker queue
 ├── tests/                        # Comprehensive unit & integration test suite
+├── ue5_highpoly_character_bpy.py # Standalone & library UE5 High-Poly Realistic Character `bpy` script
 ├── app.py                        # Gradio Web UI + mounted FastAPI service
 ├── cli.py                        # Command-line interface
 ├── Dockerfile                    # NVIDIA CUDA 12.1 runtime container
@@ -98,11 +105,17 @@ python cli.py \
   --target-faces 20000
 ```
 
-List registered 3D engines or run clothed-body Screened Poisson normal integration (`econ`):
+List registered 3D engines, run clothed-body Screened Poisson normal integration (`econ`), or build the **Unreal Engine 5 High-Poly `bpy` Character (`.fbx` + `.glb`)**:
 
 ```bash
 python cli.py --list-engines
 python cli.py -i assets/sample_input.jpg -o outputs/econ_run --engine econ --json
+
+# Build UE5 High-Poly Character via Pipeline CLI (exports character_ue5.fbx + character.glb + Cycles lookdev)
+python cli.py -i assets/sample_input.jpg -o outputs/ue5_char --engine ue5_highpoly_bpy --ue5-subsurf 2 --ue5-samples 24
+
+# Or run the standalone Blender Python (`bpy`) generator directly:
+python ue5_highpoly_character_bpy.py --reference assets/sample_input.jpg --export-fbx outputs/SK_UE5_RealisticFemale.fbx --export-glb outputs/SK_UE5_RealisticFemale.glb --render-preview outputs/ue5_lookdev.png
 ```
 
 ---

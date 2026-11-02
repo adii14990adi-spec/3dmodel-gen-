@@ -45,6 +45,7 @@ class ReconstructionEngineType(str, Enum):
 
     AUTO = "auto"
     VOLUMETRIC_SDF = "volumetric_sdf"  # Built-in Multi-View SDF + Marching Cubes
+    UE5_HIGHPOLY_BPY = "ue5_highpoly_bpy"  # UE5 High-Poly Subdivision + Manny Rig + FBX/GLB via bpy
     TRELLIS = "trellis"  # Primary: Microsoft TRELLIS multi-image 3D
     LGM = "lgm"  # Primary: Large Multi-View Gaussian Model
     TRIPOSR = "triposr"  # Primary: StabilityAI TripoSR dual-view fusion
@@ -65,6 +66,7 @@ class RiggingBackend(str, Enum):
     NONE = "none"
     AUTO = "auto"
     BUILTIN_HUMANOID = "builtin_humanoid"  # 25-joint glTF 2.0 `skins` + heat-diffused LBS weights
+    UE5_MANNY = "ue5_manny"  # 23-bone Unreal Engine 5 Mannequin / MetaHuman naming & hierarchy
     SMPLX = "smplx"  # SMPL-X template KDTree skinning transfer connector
     BLENDER = "blender"  # Headless blender-python ARMATURE_AUTO connector
 
@@ -194,6 +196,22 @@ class ReconstructorConfig(BaseModel):
     lgm_checkpoint_path: str | None = Field(default=None)
     econ_root_dir: str | None = Field(default=None)
     pifuhd_checkpoint_path: str | None = Field(default=None)
+    ue5_subsurf_level: int = Field(
+        default=2,
+        ge=1,
+        le=3,
+        description="Catmull-Clark Subdivision level for `ue5_highpoly_bpy` engine.",
+    )
+    ue5_cycles_samples: int = Field(
+        default=24,
+        ge=0,
+        le=256,
+        description="Cycles studio lookdev samples for `ue5_highpoly_bpy` (0 skips raytraced render).",
+    )
+    ue5_adapt_reference: bool = Field(
+        default=False,
+        description="Adapt UE5 PBR material palette & torso proportions to uploaded turnaround sheet.",
+    )
 
 
 class PostProcessorConfig(BaseModel):
@@ -333,7 +351,7 @@ class AppSettings(BaseSettings):
     )
 
     app_name: str = "Auto3D-Human"
-    version: str = "1.1.0"
+    version: str = "1.2.0"
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     gradio_port: int = 7860

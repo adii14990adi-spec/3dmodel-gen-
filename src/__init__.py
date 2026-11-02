@@ -34,13 +34,15 @@ from src.reconstructor import (
     RawReconstructionResult,
     TrellisEngine,
     TripoSREngine,
+    UE5HighPolyBpyConnector,
     VolumetricDualViewEngine,
 )
 from src.rigger import AutoRigger, RiggedSkeleton, RiggingResult
 from src.side_synthesizer import SideViewSynthesizer, SynthesizedSideViews
+from src.ue5_bpy_generator import UE5GeneratedBundle, UE5HighPolyBpyEngine, has_bpy_runtime
 from src.worker import JobQueueManager, celery_app
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 __all__ = [
     "AppSettings",
@@ -81,10 +83,14 @@ __all__ = [
     "TextureMode",
     "TrellisEngine",
     "TripoSREngine",
+    "UE5GeneratedBundle",
+    "UE5HighPolyBpyConnector",
+    "UE5HighPolyBpyEngine",
     "VolumetricDualViewEngine",
     "WorkerQueueConfig",
     "__version__",
     "celery_app",
     "get_settings",
+    "has_bpy_runtime",
     "is_topologically_watertight",
 ]

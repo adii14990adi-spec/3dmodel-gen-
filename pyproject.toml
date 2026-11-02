@@ -1,7 +1,7 @@
 [project]
 name = "auto3d-human"
-version = "1.0.0"
-description = "Automated Dual-View T-Pose Character Image-to-3D Pipeline (.glb / .obj)"
+version = "1.2.0"
+description = "Automated Dual-View T-Pose Character Image-to-3D & UE5 High-Poly BPY Pipeline (.glb / .fbx / .obj)"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

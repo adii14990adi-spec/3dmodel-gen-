@@ -6,12 +6,13 @@ opencv-python-headless>=4.9.0
 rembg[cpu]>=2.0.57
 scikit-image>=0.22.0
 
-# 3D Mesh Synthesis, Smoothing, Decimation & Export
+# 3D Mesh Synthesis, Smoothing, Decimation, Blender BPY & Export
 trimesh>=4.2.0
 pyvista>=0.43.0
 fast-simplification>=0.1.7
 open3d-cpu>=0.18.0; sys_platform == "linux" and platform_machine == "x86_64"
 open3d>=0.18.0; sys_platform != "linux" or platform_machine != "x86_64"
+bpy>=4.2.0,<4.6.0; sys_platform == "linux" and platform_machine == "x86_64" and python_version == "3.11"
 
 # REST API, Validation, Async Worker Queue & Web UI
 fastapi>=0.115.0
