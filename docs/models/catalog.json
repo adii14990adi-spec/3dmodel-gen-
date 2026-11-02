@@ -1,0 +1,136 @@
+{
+  "viewer_name": "3DModel View \u00b7 GitHub Pages Studio",
+  "repository": "https://github.com/adii14990adi-spec/3dmodel-gen-",
+  "model_count": 4,
+  "models": [
+    {
+      "id": "sk-ue5-realistic-female",
+      "name": "SK_UE5_RealisticFemale",
+      "subtitle": "Signature Indigo Denim & Rib-Knit",
+      "category": "UE5 High-Poly Character",
+      "description": "1.70m Catmull-Clark High-Poly character with 21 embedded PBR maps (stonewashed 45\u00b0 diagonal twill denim, modal rib-knit bodice, epidermal pore SSS, anisotropic dark groom, radial iris) & 23-bone UE5 Manny rig.",
+      "glb_url": "./models/sk-ue5-realistic-female.glb",
+      "preview_url": "./previews/sk-ue5-realistic-female.webp",
+      "front_axis": "-Z",
+      "vertices": 153926,
+      "triangles": 301420,
+      "sub_meshes": 60,
+      "bones": 23,
+      "skeleton": "UE5 Mannequin / MetaHuman (23 Bones)",
+      "embedded_textures": 21,
+      "size_mb": 2.05,
+      "height_m": 1.7,
+      "tags": [
+        "301K Tris",
+        "21 PBR Maps",
+        "23 UE5 Bones",
+        "Draco + WebP"
+      ],
+      "swatches": {
+        "skin_hex": "#E3B8A3",
+        "hair_hex": "#1E1613",
+        "top_hex": "#16161B",
+        "denim_hex": "#5B82B0",
+        "belt_hex": "#1F1F25",
+        "metal_hex": "#DCE0E6",
+        "shoes_hex": "#F2F0EC"
+      }
+    },
+    {
+      "id": "sk-ue5-cyber-techwear",
+      "name": "SK_UE5_CyberTechwear",
+      "subtitle": "Carbon Ripstop & Platinum Operative",
+      "category": "UE5 High-Poly Character",
+      "description": "Tactical sci-fi high-poly edition featuring platinum-silver strand hair textures, carbon ballistic rib-weave top, charcoal twill cargo denim normal maps, and brushed gunmetal hardware.",
+      "glb_url": "./models/sk-ue5-cyber-techwear.glb",
+      "preview_url": "./previews/sk-ue5-cyber-techwear.webp",
+      "front_axis": "-Z",
+      "vertices": 153926,
+      "triangles": 301420,
+      "sub_meshes": 60,
+      "bones": 23,
+      "skeleton": "UE5 Mannequin / MetaHuman (23 Bones)",
+      "embedded_textures": 21,
+      "size_mb": 2.07,
+      "height_m": 1.7,
+      "tags": [
+        "301K Tris",
+        "21 PBR Maps",
+        "23 UE5 Bones",
+        "Sci-Fi PBR"
+      ],
+      "swatches": {
+        "skin_hex": "#EAD2C4",
+        "hair_hex": "#AEB8C8",
+        "top_hex": "#151A24",
+        "denim_hex": "#2F3746",
+        "belt_hex": "#12151C",
+        "metal_hex": "#8FA2B8",
+        "shoes_hex": "#DCE3EC"
+      }
+    },
+    {
+      "id": "sk-ue5-editorial-couture",
+      "name": "SK_UE5_EditorialCouture",
+      "subtitle": "Oxblood Velvet & Raw Selvedge",
+      "category": "UE5 High-Poly Character",
+      "description": "Runway couture high-poly edition combining warm bronze epidermal SSS maps, oxblood rib-velvet camisole, dark raw-indigo selvedge twill denim, and 18k champagne-gold hardware.",
+      "glb_url": "./models/sk-ue5-editorial-couture.glb",
+      "preview_url": "./previews/sk-ue5-editorial-couture.webp",
+      "front_axis": "-Z",
+      "vertices": 153926,
+      "triangles": 301420,
+      "sub_meshes": 60,
+      "bones": 23,
+      "skeleton": "UE5 Mannequin / MetaHuman (23 Bones)",
+      "embedded_textures": 21,
+      "size_mb": 2.08,
+      "height_m": 1.7,
+      "tags": [
+        "301K Tris",
+        "21 PBR Maps",
+        "23 UE5 Bones",
+        "Couture PBR"
+      ],
+      "swatches": {
+        "skin_hex": "#BD8567",
+        "hair_hex": "#2A1B14",
+        "top_hex": "#4E1420",
+        "denim_hex": "#283D5E",
+        "belt_hex": "#2B1B15",
+        "metal_hex": "#E3C588",
+        "shoes_hex": "#F5EFE4"
+      }
+    },
+    {
+      "id": "ch-turnaround-highpoly",
+      "name": "CH_Turnaround_HighPoly",
+      "subtitle": "Dual-View UV Texture Atlas & Weave Normal",
+      "category": "Image-to-3D Reconstructed",
+      "description": "Reconstructed directly from assets/sample_input.jpg with a seamless 2-tile Front|Back UV Albedo Atlas, tangent-space textile micro-normal + ORM maps, and 23-bone UE5 Manny skinning.",
+      "glb_url": "./models/ch-turnaround-highpoly.glb",
+      "preview_url": "./previews/ch-turnaround-highpoly.webp",
+      "front_axis": "+Z",
+      "vertices": 18155,
+      "triangles": 34772,
+      "sub_meshes": 1,
+      "bones": 23,
+      "skeleton": "UE5 Mannequin / MetaHuman (23 Bones)",
+      "embedded_textures": 3,
+      "size_mb": 0.37,
+      "height_m": 1.8,
+      "tags": [
+        "48K Tris",
+        "2K UV Atlas",
+        "23 UE5 Bones",
+        "Image-to-3D"
+      ],
+      "swatches": {
+        "skin_hex": "#E2B59A",
+        "top_hex": "#2B5B8E",
+        "denim_hex": "#343942",
+        "belt_hex": "#4A3222"
+      }
+    }
+  ]
+}

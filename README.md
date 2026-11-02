@@ -155,6 +155,24 @@ python pro_app.py
 
 ---
 
+### 3C. Static GitHub Pages 3D Model Viewer — **3DModel View** (`web_model_viewer/` -> `docs/`)
+
+A 100% client-side, zero-backend **GitHub Pages 3D Model View Studio** built with React 18 + TypeScript + Three.js WebGL2, pre-bundled with **4 Draco + WebP High-Poly Textured 3D Showcase Models** (`~6.7 MB` total in `docs/models/`) and local Draco WASM decoding (`docs/draco/`):
+
+- **GitHub Pages Deployment (Zero-Server Hosting)**:
+  - **Automatic GitHub Actions Workflow**: `.github/workflows/pages.yml` builds `web_model_viewer` and deploys `docs/` via `actions/deploy-pages@v4` whenever pushed to `main` (enable under **Repository Settings -> Pages -> Source: GitHub Actions**).
+  - **Branch `/docs` Mode Ready**: Because `docs/` is pre-compiled with strictly relative `./` paths, `docs/.nojekyll`, and `docs/404.html`, **Settings -> Pages -> Deploy from a branch (`main` / `/docs`)** also works out-of-the-box at `https://adii14990adi-spec.github.io/3dmodel-gen-/`.
+- **Viewer Capabilities**:
+  - **Pre-Loaded High-Poly Textured Showcase**: `SK_UE5_RealisticFemale` (`301,420` tris · `21` PBR maps · `2.05 MB`), `SK_UE5_CyberTechwear` (`301,420` tris · `21` PBR maps), `SK_UE5_EditorialCouture` (`301,420` tris · `21` PBR maps), and `CH_Turnaround_HighPoly` (`34,772` tris · Dual-View UV Atlas + Weave Normal).
+  - **Universal Browser Drag-and-Drop & `?model=` Deep Links**: Drop any local `.glb`, `.gltf`, `.fbx`, `.obj`, `.stl`, or `.ply` (+ companion textures) directly into the viewport with zero server upload, or share `?model=<id-or-url>` links.
+  - **7 Shading Modes, Live Rig Pose Sliders & GPU Texture Extractor**: Switch between `Textured PBR`, `Albedo`, `Tex + Wire`, `Wireframe`, `Normals`, `Clay`, and `Chrome`; sweep 360° studio lighting; test 23-bone UE5 Manny skinning live (`T-Pose <-> Relaxed A-Pose`, `Head Yaw`); and inspect embedded WebP/PNG PBR textures.
+- **Local GitHub Pages Mirror Preview**:
+  ```bash
+  python gh_pages_app.py --host 0.0.0.0 --port 8090
+  ```
+
+---
+
 ### 4. FastAPI REST & Async Queue Endpoints
 
 | Method | Endpoint | Description |

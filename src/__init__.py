@@ -48,7 +48,7 @@ from src.side_synthesizer import SideViewSynthesizer, SynthesizedSideViews
 from src.ue5_bpy_generator import UE5GeneratedBundle, UE5HighPolyBpyEngine, has_bpy_runtime
 from src.worker import JobQueueManager, celery_app
 
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 
 __all__ = [
     "AppSettings",

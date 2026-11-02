@@ -8,6 +8,8 @@ venv
 __pycache__
 *.pyc
 outputs
+docs
+web_model_viewer
 **/node_modules
 tests
 *.md
