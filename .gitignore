@@ -17,6 +17,9 @@ dist/
 build/
 node_modules/
 web_3dmodel_pro/node_modules/
+web_model_viewer/node_modules/
+web_model_viewer/public/draco/
+web_model_viewer/public/.nojekyll
 *.tsbuildinfo
 *.egg-info/
 

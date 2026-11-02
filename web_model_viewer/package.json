@@ -1,0 +1,25 @@
+{
+  "name": "3dmodel-view-ghpages",
+  "private": true,
+  "version": "1.4.0",
+  "description": "Static GitHub Pages 3D Model Viewer Studio (Draco + WebP PBR + Multi-Format WebGL2)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 8090",
+    "sync-draco": "node scripts/sync-static.mjs",
+    "build": "npm run sync-draco && tsc -b && vite build && node scripts/postbuild.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.172.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@types/three": "^0.172.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "~5.7.2",
+    "vite": "^6.0.7"
+  }
+}
