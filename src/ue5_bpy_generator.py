@@ -20,6 +20,7 @@ import trimesh
 from PIL import Image
 
 from src.config import PROJECT_ROOT
+from src.pbr_texture_baker import generate_character_pbr_textures
 from src.postprocessor import MeshPostProcessor, PostProcessedResult
 from src.preprocessor import PreprocessedPair
 from src.reconstructor import RawReconstructionResult, voronoi_dilate_rgb
@@ -220,6 +221,20 @@ class UE5HighPolyBpyEngine:
             lookdev_path = target_dir / "ue5_studio_lookdev.png"
             bpy_script_copy = target_dir / "ue5_highpoly_character_bpy.py"
 
+            pbr_textures = generate_character_pbr_textures(
+                tex_dir=target_dir / "textures",
+                swatches={
+                    "skin_hex": "#E3B8A3",
+                    "hair_hex": "#1E1613",
+                    "top_hex": "#16161B",
+                    "denim_hex": "#5B82B0",
+                    "belt_hex": "#1F1F25",
+                    "metal_hex": "#DCE0E6",
+                    "shoes_hex": "#F2F0EC",
+                },
+                resolution=1024,
+            )
+
             manifest_path = work_dir / "ue5_manifest.json"
             result_json_path = work_dir / "ue5_result.json"
             manifest = {
@@ -230,6 +245,7 @@ class UE5HighPolyBpyEngine:
                     "subsurf_render": self.subsurf_level,
                     "palette_overrides": palette_ovr,
                     "proportion_scales": prop_scales,
+                    "pbr_textures": pbr_textures,
                 },
                 "export_fbx": str(fbx_path),
                 "export_glb": str(glb_path),

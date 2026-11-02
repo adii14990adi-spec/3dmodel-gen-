@@ -351,10 +351,11 @@ class AppSettings(BaseSettings):
     )
 
     app_name: str = "Auto3D-Human"
-    version: str = "1.2.0"
+    version: str = "1.3.0"
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     gradio_port: int = 7860
+    pro_port: int = 8080
     output_dir: Path = PROJECT_ROOT / "outputs"
     assets_dir: Path = PROJECT_ROOT / "assets"
     sample_image_path: Path = PROJECT_ROOT / "assets" / "sample_input.jpg"

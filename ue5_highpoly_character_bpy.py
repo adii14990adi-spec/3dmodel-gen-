@@ -477,6 +477,13 @@ def create_material_library(palette: dict[str, tuple[float, float, float]] | Non
     noise_wash.inputs["Detail"].default_value = 10.0
     links.new(tc.outputs["Object"], noise_wash.inputs["Vector"])
 
+    denim_mid = (
+        0.42 * denim_dark[0] + 0.58 * denim_light[0],
+        0.42 * denim_dark[1] + 0.58 * denim_light[1],
+        0.42 * denim_dark[2] + 0.58 * denim_light[2],
+    )
+    set_socket(bsdf, ["Base Color"], (*denim_mid, 1.0))
+
     ramp_denim = nodes.new("ShaderNodeValToRGB")
     ramp_denim.color_ramp.elements[0].position = 0.25
     ramp_denim.color_ramp.elements[0].color = (*denim_dark, 1.0)
@@ -523,7 +530,8 @@ def create_material_library(palette: dict[str, tuple[float, float, float]] | Non
     mat_metal = bpy.data.materials.new("MI_UE5_MetallicBuckleAndJewelry")
     mat_metal.use_nodes = True
     bsdf_metal = mat_metal.node_tree.nodes.get("Principled BSDF")
-    set_socket(bsdf_metal, ["Base Color"], (0.76, 0.77, 0.80, 1.0))
+    metal_rgb = pal.get("metal", (0.76, 0.77, 0.80))
+    set_socket(bsdf_metal, ["Base Color"], (*metal_rgb, 1.0))
     set_socket(bsdf_metal, ["Metallic"], 0.96)
     set_socket(bsdf_metal, ["Roughness"], 0.18)
     mats["metal"] = mat_metal
@@ -564,8 +572,12 @@ def create_material_library(palette: dict[str, tuple[float, float, float]] | Non
     mat_hair_glb = bpy.data.materials.new("MI_UE5_DarkWavyHair_PBR")
     mat_hair_glb.use_nodes = True
     bsdf_hg = mat_hair_glb.node_tree.nodes.get("Principled BSDF")
-    dark_tone = max(0.018, 0.18 * (1.0 - hair_melanin))
-    set_socket(bsdf_hg, ["Base Color"], (dark_tone * 1.25, dark_tone * 0.92, dark_tone * 0.76, 1.0))
+    if "hair_rgb" in pal:
+        hrgb = pal["hair_rgb"]
+        set_socket(bsdf_hg, ["Base Color"], (*hrgb, 1.0))
+    else:
+        dark_tone = max(0.018, 0.18 * (1.0 - hair_melanin))
+        set_socket(bsdf_hg, ["Base Color"], (dark_tone * 1.25, dark_tone * 0.92, dark_tone * 0.76, 1.0))
     set_socket(bsdf_hg, ["Roughness"], 0.34)
     set_socket(bsdf_hg, ["Specular IOR Level", "Specular"], 0.55)
     mats["hair_glb"] = mat_hair_glb
@@ -834,6 +846,11 @@ def build_anatomical_torso_and_head(col_char: Any, mats: dict[str, Any]) -> Any:
             if poly.center.z > 0.0075:
                 poly.material_index = 1
             poly.use_smooth = True
+        eye_uv = eye.data.uv_layers.active or eye.data.uv_layers.new(name="UVMap")
+        for poly in eye.data.polygons:
+            for li in poly.loop_indices:
+                ev = eye.data.vertices[eye.data.loops[li].vertex_index].co
+                eye_uv.data[li].uv = (0.5 + float(ev.x) / 0.0185, 0.5 + float(ev.y) / 0.0185)
         add_highpoly_modifiers(eye, 1, 1, use_corrective=False)
         link_exclusively(eye, col_char)
 
@@ -1729,8 +1746,133 @@ def setup_studio_lighting_and_cameras(col_studio: Any) -> dict[str, Any]:
     return cams
 
 
-def export_for_unreal_engine_5(fbx_path: str) -> str:
-    """Export rigged high-poly character to UE5 FBX (-Y Forward, Z Up, smoothing groups, no leaf bones)."""
+def ensure_mesh_uv_layer(mesh_obj: Any, uv_scale: float = 2.4) -> None:
+    """Ensure `mesh_obj` has a seamless `TEXCOORD_0` UV layer without 360-degree seam wrap artifacts."""
+    if mesh_obj is None or mesh_obj.type != "MESH" or mesh_obj.data is None:
+        return
+    mesh = mesh_obj.data
+    if len(mesh.uv_layers) > 0:
+        return
+
+    uv_layer = mesh.uv_layers.new(name="UVMap")
+    mesh.uv_layers.active = uv_layer
+    mw = mesh_obj.matrix_world
+    verts_w = [mw @ v.co for v in mesh.vertices]
+
+    uv_data = uv_layer.data
+    for poly in mesh.polygons:
+        raw_uvs: list[list[float]] = []
+        is_arm = False
+        cx = sum(verts_w[mesh.loops[li].vertex_index].x for li in poly.loop_indices) / max(
+            len(poly.loop_indices), 1
+        )
+        cz = sum(verts_w[mesh.loops[li].vertex_index].z for li in poly.loop_indices) / max(
+            len(poly.loop_indices), 1
+        )
+        if abs(cx) > 0.21 and cz > 1.16:
+            is_arm = True
+
+        for li in poly.loop_indices:
+            vw = verts_w[mesh.loops[li].vertex_index]
+            if is_arm:
+                ang = math.atan2(float(vw.y), float(vw.z) - 1.35) / (2.0 * math.pi) + 0.5
+                raw_uvs.append([ang * 1.4, abs(float(vw.x)) * uv_scale])
+            elif cz < 0.11:
+                # Footwear box/planar projection
+                raw_uvs.append([(float(vw.x) * 3.2) + 0.5, (float(vw.y) + float(vw.z)) * 3.2])
+            else:
+                ang = math.atan2(float(vw.x), float(vw.y)) / (2.0 * math.pi) + 0.5
+                raw_uvs.append([ang * 2.0, float(vw.z) * uv_scale])
+
+        # Fix atan2 seam wrap across polygon boundary so textures tile cleanly without stretching
+        u_vals = [uv[0] for uv in raw_uvs]
+        span = 1.4 if is_arm else 2.0
+        if max(u_vals) - min(u_vals) > span * 0.55:
+            for uv in raw_uvs:
+                if uv[0] < span * 0.45:
+                    uv[0] += span
+
+        for li, uv in zip(poly.loop_indices, raw_uvs, strict=True):
+            uv_data[li].uv = (uv[0], uv[1])
+
+
+def bind_pbr_textures_to_materials(
+    mats: dict[str, Any],
+    pbr_textures: dict[str, dict[str, str]] | None,
+) -> int:
+    """Attach real Albedo, ORM (Occlusion/Roughness/Metallic), and Tangent Normal PNGs to materials."""
+    import bpy
+
+    if not pbr_textures:
+        return 0
+
+    bound_count = 0
+    for mat_key, tex_set in pbr_textures.items():
+        mat = mats.get(mat_key)
+        if mat is None or not mat.use_nodes or mat.node_tree is None:
+            continue
+
+        nodes = mat.node_tree.nodes
+        links = mat.node_tree.links
+        bsdf = None
+        for n in nodes:
+            if n.type == "BSDF_PRINCIPLED":
+                bsdf = n
+                break
+        if bsdf is None:
+            continue
+
+        # Clear procedural links on Base Color, Roughness, Metallic, and Normal so glTF embeds textures
+        for sock_name in ("Base Color", "Roughness", "Metallic", "Normal"):
+            sock = bsdf.inputs.get(sock_name)
+            if sock is not None and sock.is_linked:
+                for lnk in list(sock.links):
+                    links.remove(lnk)
+
+        alb_path = tex_set.get("albedo")
+        if alb_path and os.path.isfile(alb_path):
+            img_alb = bpy.data.images.load(alb_path, check_existing=True)
+            img_alb.colorspace_settings.name = "sRGB"
+            tex_alb = nodes.new("ShaderNodeTexImage")
+            tex_alb.image = img_alb
+            links.new(tex_alb.outputs["Color"], bsdf.inputs["Base Color"])
+            bound_count += 1
+
+        orm_path = tex_set.get("orm")
+        if orm_path and os.path.isfile(orm_path):
+            img_orm = bpy.data.images.load(orm_path, check_existing=True)
+            img_orm.colorspace_settings.name = "Non-Color"
+            tex_orm = nodes.new("ShaderNodeTexImage")
+            tex_orm.image = img_orm
+            sep = nodes.new("ShaderNodeSeparateColor")
+            sep.mode = "RGB"
+            links.new(tex_orm.outputs["Color"], sep.inputs["Color"])
+            if "Roughness" in bsdf.inputs:
+                links.new(sep.outputs["Green"], bsdf.inputs["Roughness"])
+            if "Metallic" in bsdf.inputs:
+                links.new(sep.outputs["Blue"], bsdf.inputs["Metallic"])
+            bound_count += 1
+
+        nrm_path = tex_set.get("normal")
+        if nrm_path and os.path.isfile(nrm_path):
+            img_nrm = bpy.data.images.load(nrm_path, check_existing=True)
+            img_nrm.colorspace_settings.name = "Non-Color"
+            tex_nrm = nodes.new("ShaderNodeTexImage")
+            tex_nrm.image = img_nrm
+            nrm_node = nodes.new("ShaderNodeNormalMap")
+            nrm_node.inputs["Strength"].default_value = 0.85
+            links.new(tex_nrm.outputs["Color"], nrm_node.inputs["Color"])
+            if "Normal" in bsdf.inputs:
+                links.new(nrm_node.outputs["Normal"], bsdf.inputs["Normal"])
+            bound_count += 1
+
+        mat["has_pbr_image_textures"] = True
+
+    return bound_count
+
+
+def export_for_unreal_engine_5(fbx_path: str, embed_textures: bool = True) -> str:
+    """Export rigged high-poly character to UE5 FBX (-Y Forward, Z Up, embedded PBR textures)."""
     import bpy
 
     abs_fbx = bpy.path.abspath(fbx_path)
@@ -1750,6 +1892,8 @@ def export_for_unreal_engine_5(fbx_path: str) -> str:
         axis_forward="-Y",
         axis_up="Z",
         apply_scale_options="FBX_SCALE_NONE",
+        path_mode="COPY" if embed_textures else "AUTO",
+        embed_textures=bool(embed_textures),
     )
     return abs_fbx
 
@@ -1777,6 +1921,7 @@ def export_skinned_glb(
         temp_hair_mesh.data.materials.clear()
         if mats and "hair_glb" in mats:
             temp_hair_mesh.data.materials.append(mats["hair_glb"])
+        ensure_mesh_uv_layer(temp_hair_mesh, uv_scale=3.2)
         if arm_obj is not None and bone_segments is not None:
             temp_hair_mesh.parent = arm_obj
             temp_hair_mesh.matrix_parent_inverse = arm_obj.matrix_world.inverted()
@@ -1788,6 +1933,22 @@ def export_skinned_glb(
     if hair_curve_obj is not None:
         prev_hide = hair_curve_obj.hide_render
         hair_curve_obj.hide_render = True
+
+    # Temporarily detach Cycles-only procedural color/bump links ONLY on materials without image textures
+    saved_links: list[tuple[Any, Any, Any]] = []
+    for mat in bpy.data.materials:
+        if not mat.use_nodes or mat.node_tree is None or mat.get("has_pbr_image_textures"):
+            continue
+        for node in mat.node_tree.nodes:
+            if node.type == "BSDF_PRINCIPLED":
+                for sock_name in ("Base Color", "Normal"):
+                    sock = node.inputs.get(sock_name)
+                    if sock is not None and sock.is_linked:
+                        for lnk in list(sock.links):
+                            if lnk.from_node.type != "TEX_IMAGE":
+                                saved_links.append((mat.node_tree.links, lnk.from_socket, lnk.to_socket))
+                                mat.node_tree.links.remove(lnk)
+
     try:
         bpy.ops.export_scene.gltf(
             filepath=abs_glb,
@@ -1798,6 +1959,11 @@ def export_skinned_glb(
             export_yup=True,
         )
     finally:
+        for tree_links, from_sock, to_sock in saved_links:
+            try:
+                tree_links.new(from_sock, to_sock)
+            except Exception:
+                pass
         if hair_curve_obj is not None:
             hair_curve_obj.hide_render = prev_hide
         if temp_hair_mesh is not None:
@@ -1893,16 +2059,20 @@ def build_complete_ue5_character(config_overrides: dict[str, Any] | None = None)
     hair_obj, _scalp_cap = build_long_wavy_hair_groom(col_hair, mats)
 
     all_meshes = [obj for obj in bpy.data.objects if obj.type == "MESH" and not obj.name.startswith("REF_")]
+    for m_obj in all_meshes:
+        ensure_mesh_uv_layer(m_obj, uv_scale=2.4)
+    bound_tex_count = bind_pbr_textures_to_materials(mats, CONFIG.get("pbr_textures"))
     arm_obj, bone_segments = build_ue5_skeleton_rig(col_rig, all_meshes)
     setup_studio_lighting_and_cameras(col_studio)
 
     print(
-        f"[Success] Built '{CONFIG['character_name']}' with {len(all_meshes)} high-poly mesh components "
-        f"and {len(bone_segments)} UE5 Mannequin bones."
+        f"[Success] Built '{CONFIG['character_name']}' with {len(all_meshes)} UV-mapped high-poly meshes, "
+        f"{bound_tex_count} PBR texture maps, and {len(bone_segments)} UE5 Mannequin bones."
     )
     return {
         "character_name": CONFIG["character_name"],
         "mesh_component_count": len(all_meshes),
+        "pbr_textures_bound": bound_tex_count,
         "bone_count": len(bone_segments),
         "bone_names": [b[0] for b in bone_segments],
         "reference_image_loaded": resolved_ref,
@@ -1910,6 +2080,7 @@ def build_complete_ue5_character(config_overrides: dict[str, Any] | None = None)
         "armature_obj": arm_obj,
         "bone_segments": bone_segments,
         "materials": mats,
+        "all_meshes": all_meshes,
     }
 
 
@@ -1950,10 +2121,62 @@ def main(argv: list[str] | None = None) -> int:
         samples = int(manifest.get("samples", 0))
         if manifest.get("render_preview") and samples > 0:
             render_studio_turnaround_sheet(manifest["render_preview"], samples=samples)
+
+        # Export textured & skinned Multi-LOD tiers directly from Blender preserving UV + PBR maps
+        if manifest.get("export_lods"):
+            import bpy
+
+            char_meshes = info["all_meshes"]
+            hair_crv = info["hair_curve_obj"]
+            orig_sub: list[tuple[Any, int, int]] = []
+            for m_obj in char_meshes:
+                for mod in m_obj.modifiers:
+                    if mod.type == "SUBSURF":
+                        orig_sub.append((mod, int(mod.levels), int(mod.render_levels)))
+            orig_hair_res = int(hair_crv.data.resolution_u) if hair_crv is not None else 3
+
+            for lod_spec in manifest["export_lods"]:
+                sub_lvl = int(lod_spec.get("subsurf", 0))
+                dec_ratio = float(lod_spec.get("decimate", 1.0))
+                for mod, _v, _r in orig_sub:
+                    mod.levels = sub_lvl
+                    mod.render_levels = sub_lvl
+                if hair_crv is not None:
+                    hair_crv.data.resolution_u = max(1, min(3, sub_lvl + 1))
+
+                added_dec: list[tuple[Any, Any]] = []
+                if dec_ratio < 0.99:
+                    for m_obj in char_meshes:
+                        if len(m_obj.data.polygons) >= 48:
+                            dmod = m_obj.modifiers.new(name="Temp_LOD_Decimate", type="DECIMATE")
+                            dmod.ratio = dec_ratio
+                            # Move DECIMATE before ARMATURE so skinning stays active
+                            added_dec.append((m_obj, dmod))
+
+                bpy.context.view_layer.update()
+                try:
+                    export_skinned_glb(
+                        lod_spec["glb_path"],
+                        hair_curve_obj=hair_crv,
+                        arm_obj=info["armature_obj"],
+                        bone_segments=info["bone_segments"],
+                        mats=info["materials"],
+                    )
+                finally:
+                    for m_obj, dmod in added_dec:
+                        m_obj.modifiers.remove(dmod)
+
+            for mod, v_lvl, r_lvl in orig_sub:
+                mod.levels = v_lvl
+                mod.render_levels = r_lvl
+            if hair_crv is not None:
+                hair_crv.data.resolution_u = orig_hair_res
+
         if manifest.get("result_json"):
             serializable = {
                 "character_name": info["character_name"],
                 "mesh_component_count": info["mesh_component_count"],
+                "pbr_textures_bound": info.get("pbr_textures_bound", 0),
                 "bone_count": info["bone_count"],
                 "bone_segments": [
                     [name, list(head_xyz), list(tail_xyz)]

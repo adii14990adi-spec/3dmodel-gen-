@@ -53,7 +53,10 @@ auto3d-human/
 ├── src/
 │   ├── __init__.py
 │   ├── config.py                 # Pydantic v2 & environment settings (AUTO3D_*)
+│   ├── highpoly_system.py        # 3DModel Pro High-Poly Textured 3D & Multi-LOD orchestrator
+│   ├── pbr_texture_baker.py      # Procedural 1K/2K Albedo, Tangent-Normal & ORM PNG texture baker
 │   ├── pipeline.py               # End-to-end Auto3DHumanPipeline orchestrator
+│   ├── pro_server.py             # Standalone 3DModel Pro FastAPI + React/Three.js SPA server (:8080)
 │   ├── preprocessor.py           # Dual-view splitting, spine centering, rembg / GrabCut
 │   ├── side_synthesizer.py       # ±90° lateral profile synthesis (Anatomical / Zero123++ / SV3D)
 │   ├── reconstructor.py          # Multi-view 3D synthesis & Marching Cubes engines
@@ -128,10 +131,27 @@ Launch the combined Web Studio and REST API (binds to `0.0.0.0:7860`):
 python app.py
 ```
 
-- **Gradio Web Studio**: `http://localhost:7860/`
+- **Gradio Web Studio (`app.py`)**: `http://localhost:7860/`
 - **Swagger / OpenAPI Docs**: `http://localhost:7860/docs`
 - **Queue Telemetry**: `http://localhost:7860/api/v1/queue/stats`
 - **Health Endpoint**: `http://localhost:7860/health`
+
+---
+
+### 3B. Separate High-Poly Web Platform — **3DModel Pro Studio** (`pro_app.py` + `web_3dmodel_pro/`)
+
+Launch the dedicated **3DModel Pro — High-Poly Character Forge & UE5 Multi-LOD Asset System** (React + TypeScript + Three.js WebGL PBR Viewport + FastAPI `/api/pro/v1/*` on `0.0.0.0:8080`):
+
+```bash
+python pro_app.py
+```
+
+- **3DModel Pro Web Studio**: `http://localhost:8080/`
+  - **Pre-Loaded High-Poly Textured 3D Showcase**: Ships with 4 UV-unwrapped (`TEXCOORD_0`) High-Poly Textured 3D models (`SK_UE5_RealisticFemale`, `SK_UE5_CyberTechwear`, `SK_UE5_EditorialCouture`, and `CH_Turnaround_HighPoly`) carrying embedded PBR textures (`BaseColor/Albedo`, `Tangent-Space Normal`, and packed `ORM` maps) across `LOD0–LOD3` `.glb` and UE5 `.fbx`.
+  - **UE5 Character Forge**: Bake 512px / 1K / 2K seamless PBR texture sets (epidermal pore SSS, 45° stonewashed twill denim, rib-knit cloth, anisotropic hair fibers, pebbled leather, tumbled sneakers, radial iris), adjust Catmull-Clark Subdivision levels (`L1 ~81K`, `L2 ~301K`, `L3 ~1.12M` tris), proportions, and reference turnaround adaptation.
+  - **High-Poly Up-Res & Texture Lab**: Upload any `.glb`/`.obj`/`.ply` 3D mesh or Dual-View turnaround sheet to run headless Blender `bpy` Catmull-Clark subdivision, UV unwrapping + baked diffuse/micro-normal/ORM maps, 23-bone UE5 Manny rigging, and textured **`LOD0–LOD3` chain** generation.
+  - **Real-Time Three.js 16× Anisotropic PBR Viewport & Texture Inspector**: Instant `Textured PBR` / `Albedo Map` / `Textured + Wire` / `Normals` / `Untextured Clay` shading modes, zoomable **PBR Texture Map Inspector** (`All` | `Albedo` | `Normal` | `ORM`), live **3D 23-Bone X-Ray Skeleton Overlay**, and hot-swappable `LOD0`–`LOD3` switcher.
+- **3DModel Pro OpenAPI Docs**: `http://localhost:8080/api/pro/v1/docs`
 
 ---
 

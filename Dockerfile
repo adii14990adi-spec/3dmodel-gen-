@@ -59,11 +59,12 @@ RUN python3 -m pip install --upgrade pip setuptools wheel \
 
 COPY --chown=auto3d:auto3d assets/ /app/assets/
 COPY --chown=auto3d:auto3d src/ /app/src/
-COPY --chown=auto3d:auto3d app.py cli.py ue5_highpoly_character_bpy.py pyproject.toml README.md /app/
+COPY --chown=auto3d:auto3d web_3dmodel_pro/ /app/web_3dmodel_pro/
+COPY --chown=auto3d:auto3d app.py pro_app.py cli.py ue5_highpoly_character_bpy.py pyproject.toml README.md /app/
 
 USER auto3d
 
-EXPOSE 7860 8000
+EXPOSE 7860 8000 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=25s --retries=3 \
     CMD curl -fsS http://127.0.0.1:7860/health || exit 1
