@@ -1,0 +1,90 @@
+"""Auto3D-Human: Automated Dual-View T-Pose Character Image-to-3D Pipeline."""
+
+from src.config import (
+    AppSettings,
+    PipelineConfig,
+    PostProcessorConfig,
+    PreprocessorConfig,
+    QueueBackend,
+    ReconstructionEngineType,
+    ReconstructorConfig,
+    RiggingBackend,
+    RiggingConfig,
+    SegmentationBackend,
+    SideSynthesisBackend,
+    SideSynthesizerConfig,
+    SplitMode,
+    TextureMode,
+    WorkerQueueConfig,
+    get_settings,
+)
+from src.pipeline import Auto3DHumanPipeline, PipelineResult
+from src.postprocessor import MeshPostProcessor, PostProcessedResult, is_topologically_watertight
+from src.preprocessor import DualViewPreprocessor, PreprocessedPair
+from src.reconstructor import (
+    DEFAULT_REGISTRY,
+    BaseReconstructionEngine,
+    ECONEngine,
+    EngineInfo,
+    EngineNotAvailableError,
+    EngineRegistry,
+    LGMEngine,
+    MultiViewReconstructor,
+    PIFuHDEngine,
+    RawReconstructionResult,
+    TrellisEngine,
+    TripoSREngine,
+    VolumetricDualViewEngine,
+)
+from src.rigger import AutoRigger, RiggedSkeleton, RiggingResult
+from src.side_synthesizer import SideViewSynthesizer, SynthesizedSideViews
+from src.worker import JobQueueManager, celery_app
+
+__version__ = "1.1.0"
+
+__all__ = [
+    "AppSettings",
+    "Auto3DHumanPipeline",
+    "AutoRigger",
+    "BaseReconstructionEngine",
+    "DEFAULT_REGISTRY",
+    "DualViewPreprocessor",
+    "ECONEngine",
+    "EngineInfo",
+    "EngineNotAvailableError",
+    "EngineRegistry",
+    "JobQueueManager",
+    "LGMEngine",
+    "MeshPostProcessor",
+    "MultiViewReconstructor",
+    "PIFuHDEngine",
+    "PipelineConfig",
+    "PipelineResult",
+    "PostProcessedResult",
+    "PostProcessorConfig",
+    "PreprocessedPair",
+    "PreprocessorConfig",
+    "QueueBackend",
+    "RawReconstructionResult",
+    "ReconstructionEngineType",
+    "ReconstructorConfig",
+    "RiggedSkeleton",
+    "RiggingBackend",
+    "RiggingConfig",
+    "RiggingResult",
+    "SegmentationBackend",
+    "SideSynthesisBackend",
+    "SideSynthesizerConfig",
+    "SideViewSynthesizer",
+    "SplitMode",
+    "SynthesizedSideViews",
+    "TextureMode",
+    "TrellisEngine",
+    "TripoSREngine",
+    "VolumetricDualViewEngine",
+    "WorkerQueueConfig",
+    "__version__",
+    "celery_app",
+    "get_settings",
+    "is_topologically_watertight",
+]

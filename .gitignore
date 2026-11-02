@@ -1,0 +1,31 @@
+# Byte-compiled / virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Caches & tooling
+.cache/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Generated runtime artifacts & checkpoints
+outputs/
+*.ckpt
+*.safetensors
+*.onnx
+.u2net/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
