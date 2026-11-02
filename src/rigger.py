@@ -93,7 +93,7 @@ class RiggedSkeleton:
                 }
             )
         return {
-            "armature_name": "Auto3DHumanoidArmature",
+            "armature_name": self.metadata.get("armature_name", "Auto3DHumanoidArmature"),
             "backend_used": self.backend_used,
             "joint_count": len(self.joint_names),
             "bones": bones,

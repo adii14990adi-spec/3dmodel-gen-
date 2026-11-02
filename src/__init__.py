@@ -18,6 +18,12 @@ from src.config import (
     WorkerQueueConfig,
     get_settings,
 )
+from src.highpoly_system import (
+    HIGHPOLY_ARCHETYPES,
+    HighPolyCharacterRequest,
+    HighPolyModelSystem,
+    HighPolyUpresRequest,
+)
 from src.pipeline import Auto3DHumanPipeline, PipelineResult
 from src.postprocessor import MeshPostProcessor, PostProcessedResult, is_topologically_watertight
 from src.preprocessor import DualViewPreprocessor, PreprocessedPair
@@ -42,7 +48,7 @@ from src.side_synthesizer import SideViewSynthesizer, SynthesizedSideViews
 from src.ue5_bpy_generator import UE5GeneratedBundle, UE5HighPolyBpyEngine, has_bpy_runtime
 from src.worker import JobQueueManager, celery_app
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 __all__ = [
     "AppSettings",
@@ -55,6 +61,10 @@ __all__ = [
     "EngineInfo",
     "EngineNotAvailableError",
     "EngineRegistry",
+    "HIGHPOLY_ARCHETYPES",
+    "HighPolyCharacterRequest",
+    "HighPolyModelSystem",
+    "HighPolyUpresRequest",
     "JobQueueManager",
     "LGMEngine",
     "MeshPostProcessor",

@@ -15,6 +15,9 @@ env/
 htmlcov/
 dist/
 build/
+node_modules/
+web_3dmodel_pro/node_modules/
+*.tsbuildinfo
 *.egg-info/
 
 # Generated runtime artifacts & checkpoints
