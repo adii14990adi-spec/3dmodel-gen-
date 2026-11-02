@@ -1,6 +1,10 @@
-# Auto3D-Human: Image-to-3D T-Pose Character Pipeline
+# Auto3D-Human & 3DModel View Studio
 
-**Auto3D-Human** is an automated Python pipeline that transforms a single **dual-view T-pose character reference sheet** (containing aligned **Front** and **Back** views) into a **watertight, rigging-ready, 25-bone humanoid-skinned, PBR-textured 3D mesh (`.glb` / `.obj`)**, exposed via a **CLI tool**, an async-scalable **FastAPI REST backend**, and an interactive **Gradio Web UI**.
+[![Deploy 3DModel View to GitHub Pages](https://github.com/adii14990adi-spec/3dmodel-gen-/actions/workflows/pages.yml/badge.svg)](https://github.com/adii14990adi-spec/3dmodel-gen-/actions/workflows/pages.yml)
+
+- **Live 3DModel View Web (GitHub Pages)**: **https://adii14990adi-spec.github.io/3dmodel-gen-/**
+
+**Auto3D-Human** is an automated Python pipeline that transforms a single **dual-view T-pose character reference sheet** (containing aligned **Front** and **Back** views) into a **watertight, rigging-ready, 25-bone humanoid-skinned, PBR-textured 3D mesh (`.glb` / `.obj`)**, exposed via a **CLI tool**, an async-scalable **FastAPI REST backend**, an interactive **Gradio Web UI**, **`3DModel Pro Studio`**, and a static **GitHub Pages 3D Model Viewer (`3DModel View`)**.
 
 ---
 
