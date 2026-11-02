@@ -1,0 +1,47 @@
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "7860:7860"
+    environment:
+      AUTO3D_WORKER_QUEUE__BACKEND: celery
+      AUTO3D_WORKER_QUEUE__REDIS_URL: redis://redis:6379/0
+      AUTO3D_OUTPUT_DIR: /app/outputs
+    volumes:
+      - auto3d_outputs:/app/outputs
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: ["celery", "-A", "src.worker.celery_app", "worker", "--loglevel=info", "--concurrency=2"]
+    environment:
+      AUTO3D_WORKER_QUEUE__BACKEND: celery
+      AUTO3D_WORKER_QUEUE__REDIS_URL: redis://redis:6379/0
+      AUTO3D_OUTPUT_DIR: /app/outputs
+    volumes:
+      - auto3d_outputs:/app/outputs
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  auto3d_outputs:

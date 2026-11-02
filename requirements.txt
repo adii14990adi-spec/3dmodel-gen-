@@ -1,0 +1,30 @@
+# Core Numerical & Image Processing
+numpy>=1.26.0
+scipy>=1.12.0
+Pillow>=10.2.0
+opencv-python-headless>=4.9.0
+rembg[cpu]>=2.0.57
+scikit-image>=0.22.0
+
+# 3D Mesh Synthesis, Smoothing, Decimation & Export
+trimesh>=4.2.0
+pyvista>=0.43.0
+fast-simplification>=0.1.7
+open3d-cpu>=0.18.0; sys_platform == "linux" and platform_machine == "x86_64"
+open3d>=0.18.0; sys_platform != "linux" or platform_machine != "x86_64"
+
+# REST API, Validation, Async Worker Queue & Web UI
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.9
+pydantic>=2.7.0
+pydantic-settings>=2.3.0
+gradio>=5.0.0
+httpx>=0.27.0
+celery>=5.4.0
+redis>=5.0.0
+
+# Testing & Linting
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+ruff>=0.6.0
