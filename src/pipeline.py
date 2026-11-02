@@ -11,12 +11,13 @@ from typing import Any
 
 from PIL import Image
 
-from src.config import PipelineConfig
+from src.config import PipelineConfig, ReconstructionEngineType
 from src.postprocessor import MeshPostProcessor, PostProcessedResult
 from src.preprocessor import DualViewPreprocessor, PreprocessedPair
 from src.reconstructor import MultiViewReconstructor, RawReconstructionResult
 from src.rigger import AutoRigger, RiggingResult
 from src.side_synthesizer import SideViewSynthesizer, SynthesizedSideViews
+from src.ue5_bpy_generator import UE5HighPolyBpyEngine, has_bpy_runtime
 
 
 @dataclass
@@ -40,7 +41,9 @@ class PipelineResult:
                 "enabled": True,
                 "backend_used": self.rigging.skeleton.backend_used,
                 "joint_count": len(self.rigging.skeleton.joint_names),
-                "armature_name": "Auto3DHumanoidArmature",
+                "armature_name": self.rigging.skeleton.metadata.get(
+                    "armature_name", "Auto3DHumanoidArmature"
+                ),
                 **self.rigging.skeleton.metadata,
             }
 
@@ -101,26 +104,45 @@ class Auto3DHumanPipeline:
         side_views = self.side_synthesizer.synthesize(preprocessed)
         t_side = time.perf_counter() - t_s0
 
-        _notify("reconstructing", 48)
-        t1 = time.perf_counter()
-        raw = self.reconstructor.reconstruct(preprocessed, side_views=side_views)
-        t_rec = time.perf_counter() - t1
-
         out_path = Path(output_dir) if output_dir is not None else None
-        _notify("postprocessing", 75)
-        t2 = time.perf_counter()
-        post = self.postprocessor.process(raw, output_dir=out_path, stem=stem)
-        t_post = time.perf_counter() - t2
 
-        _notify("rigging", 90)
-        t3 = time.perf_counter()
-        glb_exported = post.exported_files.get("glb")
-        rigging_res = self.rigger.rig_and_inject(
-            watertight_mesh=post.watertight_geometry,
-            glb_path=glb_exported,
-            output_dir=out_path,
-        )
-        t_rig = time.perf_counter() - t3
+        # Dedicated Unreal Engine 5 High-Poly `bpy` pipeline (preserves SSS/PBR shaders, Groom & UE5 FBX)
+        if self.config.reconstructor.engine == ReconstructionEngineType.UE5_HIGHPOLY_BPY and (
+            has_bpy_runtime() or not self.config.reconstructor.allow_fallback
+        ):
+            _notify("reconstructing", 52)
+            t1 = time.perf_counter()
+            ue5_bundle = UE5HighPolyBpyEngine(
+                subsurf_level=self.config.reconstructor.ue5_subsurf_level,
+                cycles_samples=self.config.reconstructor.ue5_cycles_samples,
+                adapt_to_reference=self.config.reconstructor.ue5_adapt_reference,
+            ).generate(preprocessed, output_dir=out_path, stem=stem)
+            t_rec = time.perf_counter() - t1
+            raw = ue5_bundle.raw_result
+            post = ue5_bundle.post_result
+            rigging_res = ue5_bundle.rig_result if self.config.rigging.enabled else None
+            t_post = 0.0
+            t_rig = 0.0
+        else:
+            _notify("reconstructing", 48)
+            t1 = time.perf_counter()
+            raw = self.reconstructor.reconstruct(preprocessed, side_views=side_views)
+            t_rec = time.perf_counter() - t1
+
+            _notify("postprocessing", 75)
+            t2 = time.perf_counter()
+            post = self.postprocessor.process(raw, output_dir=out_path, stem=stem)
+            t_post = time.perf_counter() - t2
+
+            _notify("rigging", 90)
+            t3 = time.perf_counter()
+            glb_exported = post.exported_files.get("glb")
+            rigging_res = self.rigger.rig_and_inject(
+                watertight_mesh=post.watertight_geometry,
+                glb_path=glb_exported,
+                output_dir=out_path,
+            )
+            t_rig = time.perf_counter() - t3
 
         total_elapsed = time.perf_counter() - t_start
         timings = {
