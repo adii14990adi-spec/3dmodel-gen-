@@ -6,10 +6,11 @@ import json
 import struct
 import threading
 import urllib.request
+from pathlib import Path
 
 from gh_pages_app import create_gh_pages_server
-from src.config import PROJECT_ROOT
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DOCS_DIR = PROJECT_ROOT / "docs"
 
 
@@ -76,6 +77,7 @@ def test_gh_pages_workflow_manifest_valid() -> None:
     assert wf_path.is_file()
     text = wf_path.read_text(encoding="utf-8")
     assert "actions/configure-pages@v5" in text
+    assert "enablement: true" in text
     assert "actions/upload-pages-artifact@v3" in text
     assert "actions/deploy-pages@v4" in text
     assert "pages: write" in text
