@@ -36,6 +36,12 @@ class GitHubPagesHandler(SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-cache")
         super().end_headers()
 
+    def copyfile(self, source: object, outputfile: object) -> None:
+        try:
+            super().copyfile(source, outputfile)  # type: ignore[arg-type]
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
 
 def create_gh_pages_server(
     host: str = "0.0.0.0",
