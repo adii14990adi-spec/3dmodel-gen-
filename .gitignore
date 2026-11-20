@@ -1,0 +1,15 @@
+build/
+out/
+.venv/
+.cache/
+node_modules/
+web-viewer/node_modules/
+web-viewer/dist/
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+.DS_Store
+Testing/
+CMakeUserPresets.json

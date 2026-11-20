@@ -1,0 +1,35 @@
+{
+  "asset_name": "armored_vehicle",
+  "category": "Vehicle",
+  "version": "1.0.0",
+  "target_engine": "Unity 6",
+  "exports": {
+    "fbx": "Unity_Export/Vehicles/armored_vehicle.fbx",
+    "glb": "Unity_Export/Vehicles/armored_vehicle.glb"
+  },
+  "parameters": {
+    "include_roof_turret": "true",
+    "length": "4.6",
+    "width": "2.1"
+  },
+  "components": [
+    {"id": 0, "name": "Hull", "material_id": 0},
+    {"id": 1, "name": "Cabin", "material_id": 0},
+    {"id": 2, "name": "Windshield", "material_id": 2},
+    {"id": 3, "name": "Wheels", "material_id": 1},
+    {"id": 4, "name": "Turret", "material_id": 0}
+  ],
+  "materials": [
+    {"id": 0, "name": "OliveArmor", "metallic": 0.65, "roughness": 0.45},
+    {"id": 1, "name": "TireRubber", "metallic": 0, "roughness": 0.88},
+    {"id": 2, "name": "ArmoredGlass", "metallic": 0.1, "roughness": 0.1}
+  ],
+  "validation": {
+    "vertex_count": 268,
+    "face_count": 358,
+    "valid": true,
+    "watertight": true,
+    "non_manifold_edges": 0,
+    "degenerate_faces": 0
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "asset_name": "assault_rifle",
+  "category": "Weapon",
+  "version": "1.0.0",
+  "target_engine": "Unity 6",
+  "exports": {
+    "fbx": "Unity_Export/Weapons/assault_rifle.fbx",
+    "glb": "Unity_Export/Weapons/assault_rifle.glb"
+  },
+  "parameters": {
+    "barrel_length": "0.38",
+    "include_optic": "true",
+    "receiver_length": "0.32"
+  },
+  "components": [
+    {"id": 0, "name": "Receiver", "material_id": 0},
+    {"id": 1, "name": "Handguard", "material_id": 1},
+    {"id": 2, "name": "Barrel", "material_id": 0},
+    {"id": 3, "name": "Stock", "material_id": 1},
+    {"id": 4, "name": "PistolGrip", "material_id": 1},
+    {"id": 5, "name": "Magazine", "material_id": 1},
+    {"id": 6, "name": "TopRail", "material_id": 0},
+    {"id": 7, "name": "OpticScope", "material_id": 0}
+  ],
+  "materials": [
+    {"id": 0, "name": "GunmetalSteel", "metallic": 0.88, "roughness": 0.32},
+    {"id": 1, "name": "TacticalPolymer", "metallic": 0.05, "roughness": 0.72},
+    {"id": 2, "name": "OpticLens", "metallic": 0.1, "roughness": 0.08}
+  ],
+  "validation": {
+    "vertex_count": 208,
+    "face_count": 252,
+    "valid": true,
+    "watertight": true,
+    "non_manifold_edges": 0,
+    "degenerate_faces": 0
+  }
+}

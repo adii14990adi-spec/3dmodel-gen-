@@ -1,0 +1,38 @@
+{
+  "asset_name": "modular_building",
+  "category": "Building",
+  "version": "1.0.0",
+  "target_engine": "Unity 6",
+  "exports": {
+    "fbx": "Unity_Export/Buildings/modular_building.fbx",
+    "glb": "Unity_Export/Buildings/modular_building.glb"
+  },
+  "parameters": {
+    "depth": "6.0",
+    "floor_count": "3",
+    "include_balcony": "true",
+    "width": "8.0"
+  },
+  "components": [
+    {"id": 0, "name": "Foundation", "material_id": 0},
+    {"id": 1, "name": "Walls", "material_id": 0},
+    {"id": 2, "name": "Windows", "material_id": 1},
+    {"id": 3, "name": "Trim", "material_id": 2},
+    {"id": 4, "name": "EntranceDoor", "material_id": 3},
+    {"id": 5, "name": "Roof", "material_id": 2}
+  ],
+  "materials": [
+    {"id": 0, "name": "ConcreteFacade", "metallic": 0, "roughness": 0.85},
+    {"id": 1, "name": "WindowGlass", "metallic": 0.1, "roughness": 0.08},
+    {"id": 2, "name": "TrimMetal", "metallic": 0.8, "roughness": 0.35},
+    {"id": 3, "name": "DoorWood", "metallic": 0, "roughness": 0.65}
+  ],
+  "validation": {
+    "vertex_count": 240,
+    "face_count": 182,
+    "valid": true,
+    "watertight": true,
+    "non_manifold_edges": 0,
+    "degenerate_faces": 0
+  }
+}

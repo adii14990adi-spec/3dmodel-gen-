@@ -1,0 +1,30 @@
+{
+  "asset_name": "procedural_terrain",
+  "category": "Environment",
+  "version": "1.0.0",
+  "target_engine": "Unity 6",
+  "exports": {
+    "fbx": "Unity_Export/Environments/procedural_terrain.fbx",
+    "glb": "Unity_Export/Environments/procedural_terrain.glb"
+  },
+  "parameters": {
+    "depth": "64.0",
+    "max_height": "8.0",
+    "octaves": "4",
+    "width": "64.0"
+  },
+  "components": [
+    {"id": 0, "name": "TerrainSurface", "material_id": 0}
+  ],
+  "materials": [
+    {"id": 0, "name": "TerrainGrassRock", "metallic": 0, "roughness": 0.9}
+  ],
+  "validation": {
+    "vertex_count": 2401,
+    "face_count": 2304,
+    "valid": true,
+    "watertight": false,
+    "non_manifold_edges": 0,
+    "degenerate_faces": 0
+  }
+}

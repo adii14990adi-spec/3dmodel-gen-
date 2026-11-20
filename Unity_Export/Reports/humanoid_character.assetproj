@@ -1,0 +1,34 @@
+{
+  "asset_name": "humanoid_character",
+  "category": "Character",
+  "version": "1.0.0",
+  "target_engine": "Unity 6",
+  "exports": {
+    "fbx": "Unity_Export/Characters/humanoid_character.fbx",
+    "glb": "Unity_Export/Characters/humanoid_character.glb"
+  },
+  "parameters": {
+    "height": "1.78",
+    "include_armor_vest": "true"
+  },
+  "components": [
+    {"id": 0, "name": "Torso", "material_id": 1},
+    {"id": 1, "name": "Head", "material_id": 0},
+    {"id": 2, "name": "Arms", "material_id": 1},
+    {"id": 3, "name": "Legs", "material_id": 1},
+    {"id": 4, "name": "ArmorVest", "material_id": 2}
+  ],
+  "materials": [
+    {"id": 0, "name": "CharacterSkin", "metallic": 0, "roughness": 0.55},
+    {"id": 1, "name": "TacticalSuit", "metallic": 0.1, "roughness": 0.68},
+    {"id": 2, "name": "ChestArmor", "metallic": 0.75, "roughness": 0.35}
+  ],
+  "validation": {
+    "vertex_count": 514,
+    "face_count": 616,
+    "valid": true,
+    "watertight": true,
+    "non_manifold_edges": 0,
+    "degenerate_faces": 0
+  }
+}
