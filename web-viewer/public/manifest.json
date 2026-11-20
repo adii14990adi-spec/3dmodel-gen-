@@ -1,0 +1,386 @@
+{
+  "generatedAt": "2026-11-20T10:27:35.714Z",
+  "totalAssets": 5,
+  "assets": [
+    {
+      "id": "armored_vehicle",
+      "name": "armored_vehicle",
+      "category": "Vehicle",
+      "version": "1.0.0",
+      "targetEngine": "Unity 6",
+      "formats": [
+        "GLB",
+        "FBX"
+      ],
+      "previewPath": "./Unity_Export/Vehicles/armored_vehicle.glb",
+      "fbxPath": "./Unity_Export/Vehicles/armored_vehicle.fbx",
+      "glbPath": "./Unity_Export/Vehicles/armored_vehicle.glb",
+      "projectPath": "./Unity_Export/Reports/armored_vehicle.assetproj",
+      "glbSizeBytes": 20772,
+      "fbxSizeBytes": 22985,
+      "parameters": {
+        "include_roof_turret": "true",
+        "length": "4.6",
+        "width": "2.1"
+      },
+      "components": [
+        {
+          "id": 0,
+          "name": "Hull",
+          "material_id": 0
+        },
+        {
+          "id": 1,
+          "name": "Cabin",
+          "material_id": 0
+        },
+        {
+          "id": 2,
+          "name": "Windshield",
+          "material_id": 2
+        },
+        {
+          "id": 3,
+          "name": "Wheels",
+          "material_id": 1
+        },
+        {
+          "id": 4,
+          "name": "Turret",
+          "material_id": 0
+        }
+      ],
+      "materials": [
+        {
+          "id": 0,
+          "name": "OliveArmor",
+          "metallic": 0.65,
+          "roughness": 0.45
+        },
+        {
+          "id": 1,
+          "name": "TireRubber",
+          "metallic": 0,
+          "roughness": 0.88
+        },
+        {
+          "id": 2,
+          "name": "ArmoredGlass",
+          "metallic": 0.1,
+          "roughness": 0.1
+        }
+      ],
+      "validation": {
+        "vertex_count": 268,
+        "face_count": 358,
+        "valid": true,
+        "watertight": true,
+        "non_manifold_edges": 0,
+        "degenerate_faces": 0
+      }
+    },
+    {
+      "id": "assault_rifle",
+      "name": "assault_rifle",
+      "category": "Weapon",
+      "version": "1.0.0",
+      "targetEngine": "Unity 6",
+      "formats": [
+        "GLB",
+        "FBX"
+      ],
+      "previewPath": "./Unity_Export/Weapons/assault_rifle.glb",
+      "fbxPath": "./Unity_Export/Weapons/assault_rifle.fbx",
+      "glbPath": "./Unity_Export/Weapons/assault_rifle.glb",
+      "projectPath": "./Unity_Export/Reports/assault_rifle.assetproj",
+      "glbSizeBytes": 16416,
+      "fbxSizeBytes": 18334,
+      "parameters": {
+        "barrel_length": "0.38",
+        "include_optic": "true",
+        "receiver_length": "0.32"
+      },
+      "components": [
+        {
+          "id": 0,
+          "name": "Receiver",
+          "material_id": 0
+        },
+        {
+          "id": 1,
+          "name": "Handguard",
+          "material_id": 1
+        },
+        {
+          "id": 2,
+          "name": "Barrel",
+          "material_id": 0
+        },
+        {
+          "id": 3,
+          "name": "Stock",
+          "material_id": 1
+        },
+        {
+          "id": 4,
+          "name": "PistolGrip",
+          "material_id": 1
+        },
+        {
+          "id": 5,
+          "name": "Magazine",
+          "material_id": 1
+        },
+        {
+          "id": 6,
+          "name": "TopRail",
+          "material_id": 0
+        },
+        {
+          "id": 7,
+          "name": "OpticScope",
+          "material_id": 0
+        }
+      ],
+      "materials": [
+        {
+          "id": 0,
+          "name": "GunmetalSteel",
+          "metallic": 0.88,
+          "roughness": 0.32
+        },
+        {
+          "id": 1,
+          "name": "TacticalPolymer",
+          "metallic": 0.05,
+          "roughness": 0.72
+        },
+        {
+          "id": 2,
+          "name": "OpticLens",
+          "metallic": 0.1,
+          "roughness": 0.08
+        }
+      ],
+      "validation": {
+        "vertex_count": 208,
+        "face_count": 252,
+        "valid": true,
+        "watertight": true,
+        "non_manifold_edges": 0,
+        "degenerate_faces": 0
+      }
+    },
+    {
+      "id": "humanoid_character",
+      "name": "humanoid_character",
+      "category": "Character",
+      "version": "1.0.0",
+      "targetEngine": "Unity 6",
+      "formats": [
+        "GLB",
+        "FBX"
+      ],
+      "previewPath": "./Unity_Export/Characters/humanoid_character.glb",
+      "fbxPath": "./Unity_Export/Characters/humanoid_character.fbx",
+      "glbPath": "./Unity_Export/Characters/humanoid_character.glb",
+      "projectPath": "./Unity_Export/Reports/humanoid_character.assetproj",
+      "glbSizeBytes": 38164,
+      "fbxSizeBytes": 45230,
+      "parameters": {
+        "height": "1.78",
+        "include_armor_vest": "true"
+      },
+      "components": [
+        {
+          "id": 0,
+          "name": "Torso",
+          "material_id": 1
+        },
+        {
+          "id": 1,
+          "name": "Head",
+          "material_id": 0
+        },
+        {
+          "id": 2,
+          "name": "Arms",
+          "material_id": 1
+        },
+        {
+          "id": 3,
+          "name": "Legs",
+          "material_id": 1
+        },
+        {
+          "id": 4,
+          "name": "ArmorVest",
+          "material_id": 2
+        }
+      ],
+      "materials": [
+        {
+          "id": 0,
+          "name": "CharacterSkin",
+          "metallic": 0,
+          "roughness": 0.55
+        },
+        {
+          "id": 1,
+          "name": "TacticalSuit",
+          "metallic": 0.1,
+          "roughness": 0.68
+        },
+        {
+          "id": 2,
+          "name": "ChestArmor",
+          "metallic": 0.75,
+          "roughness": 0.35
+        }
+      ],
+      "validation": {
+        "vertex_count": 514,
+        "face_count": 616,
+        "valid": true,
+        "watertight": true,
+        "non_manifold_edges": 0,
+        "degenerate_faces": 0
+      }
+    },
+    {
+      "id": "modular_building",
+      "name": "modular_building",
+      "category": "Building",
+      "version": "1.0.0",
+      "targetEngine": "Unity 6",
+      "formats": [
+        "GLB",
+        "FBX"
+      ],
+      "previewPath": "./Unity_Export/Buildings/modular_building.glb",
+      "fbxPath": "./Unity_Export/Buildings/modular_building.fbx",
+      "glbPath": "./Unity_Export/Buildings/modular_building.glb",
+      "projectPath": "./Unity_Export/Reports/modular_building.assetproj",
+      "glbSizeBytes": 18140,
+      "fbxSizeBytes": 16979,
+      "parameters": {
+        "depth": "6.0",
+        "floor_count": "3",
+        "include_balcony": "true",
+        "width": "8.0"
+      },
+      "components": [
+        {
+          "id": 0,
+          "name": "Foundation",
+          "material_id": 0
+        },
+        {
+          "id": 1,
+          "name": "Walls",
+          "material_id": 0
+        },
+        {
+          "id": 2,
+          "name": "Windows",
+          "material_id": 1
+        },
+        {
+          "id": 3,
+          "name": "Trim",
+          "material_id": 2
+        },
+        {
+          "id": 4,
+          "name": "EntranceDoor",
+          "material_id": 3
+        },
+        {
+          "id": 5,
+          "name": "Roof",
+          "material_id": 2
+        }
+      ],
+      "materials": [
+        {
+          "id": 0,
+          "name": "ConcreteFacade",
+          "metallic": 0,
+          "roughness": 0.85
+        },
+        {
+          "id": 1,
+          "name": "WindowGlass",
+          "metallic": 0.1,
+          "roughness": 0.08
+        },
+        {
+          "id": 2,
+          "name": "TrimMetal",
+          "metallic": 0.8,
+          "roughness": 0.35
+        },
+        {
+          "id": 3,
+          "name": "DoorWood",
+          "metallic": 0,
+          "roughness": 0.65
+        }
+      ],
+      "validation": {
+        "vertex_count": 240,
+        "face_count": 182,
+        "valid": true,
+        "watertight": true,
+        "non_manifold_edges": 0,
+        "degenerate_faces": 0
+      }
+    },
+    {
+      "id": "procedural_terrain",
+      "name": "procedural_terrain",
+      "category": "Environment",
+      "version": "1.0.0",
+      "targetEngine": "Unity 6",
+      "formats": [
+        "GLB",
+        "FBX"
+      ],
+      "previewPath": "./Unity_Export/Environments/procedural_terrain.glb",
+      "fbxPath": "./Unity_Export/Environments/procedural_terrain.fbx",
+      "glbPath": "./Unity_Export/Environments/procedural_terrain.glb",
+      "projectPath": "./Unity_Export/Reports/procedural_terrain.assetproj",
+      "glbSizeBytes": 171776,
+      "fbxSizeBytes": 208948,
+      "parameters": {
+        "depth": "64.0",
+        "max_height": "8.0",
+        "octaves": "4",
+        "width": "64.0"
+      },
+      "components": [
+        {
+          "id": 0,
+          "name": "TerrainSurface",
+          "material_id": 0
+        }
+      ],
+      "materials": [
+        {
+          "id": 0,
+          "name": "TerrainGrassRock",
+          "metallic": 0,
+          "roughness": 0.9
+        }
+      ],
+      "validation": {
+        "vertex_count": 2401,
+        "face_count": 2304,
+        "valid": true,
+        "watertight": false,
+        "non_manifold_edges": 0,
+        "degenerate_faces": 0
+      }
+    }
+  ]
+}
