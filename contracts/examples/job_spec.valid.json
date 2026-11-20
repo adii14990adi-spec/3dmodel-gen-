@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0.0",
+  "job_id": "health-check-001",
+  "job_type": "health_check",
+  "input_refs": [],
+  "output_dir": "output",
+  "timeout_sec": 30
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Forge3D Job Result",
+  "type": "object",
+  "required": ["schema_version", "job_id", "state", "error_code", "error_message", "duration_ms", "worker_version", "artifacts"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0.0" },
+    "job_id": { "type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$" },
+    "state": { "type": "string", "enum": ["COMPLETED", "FAILED", "CANCELLED", "TIMEOUT"] },
+    "error_code": { "type": "string" },
+    "error_message": { "type": "string" },
+    "duration_ms": { "type": "integer", "minimum": 0 },
+    "worker_version": { "type": "string", "minLength": 1 },
+    "health_check": {
+      "type": "object",
+      "required": ["bpy_available", "blender_version"],
+      "properties": {
+        "bpy_available": { "type": "boolean" },
+        "blender_version": { "type": "string" }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" }
+        }
+      }
+    }
+  }
+}

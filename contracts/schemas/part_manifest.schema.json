@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Forge3D Part Manifest",
+  "type": "object",
+  "required": ["schema_version", "asset_id", "unit_convention", "axis_convention", "quaternion_order", "components"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0.0" },
+    "asset_id": { "type": "string", "minLength": 1 },
+    "unit_convention": { "type": "string", "const": "meters" },
+    "axis_convention": { "type": "string", "const": "Y-up-right-handed" },
+    "quaternion_order": { "type": "string", "const": "xyzw" },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["component_id", "parent_id", "geometry_path", "transform", "provenance"],
+        "additionalProperties": false,
+        "properties": {
+          "component_id": { "type": "string", "minLength": 1 },
+          "parent_id": { "type": ["string", "null"] },
+          "geometry_path": { "type": "string", "minLength": 1 },
+          "transform": {
+            "type": "object",
+            "required": ["position", "rotation_quat", "scale"],
+            "properties": {
+              "position": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+              "rotation_quat": { "type": "array", "items": { "type": "number" }, "minItems": 4, "maxItems": 4 },
+              "scale": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 }
+            }
+          },
+          "attachments": { "type": "array", "items": { "type": "string" } },
+          "provenance": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}
