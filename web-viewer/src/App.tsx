@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { AnimationVerifier } from './components/AnimationVerifier';
 import { AnimationClipInfo, CameraPreset, ModelViewer } from './components/ModelViewer';
 import { AssetEntry, AssetManifest, RuntimeGeometryStats } from './types/asset';
 
 type InspectorTab = 'geometry' | 'materials' | 'project' | 'quality';
-type NavPage = 'models' | 'animations' | 'modified' | 'parts' | 'reports';
+type NavPage = 'models' | 'animations' | 'verify' | 'modified' | 'parts' | 'reports';
 
 export const App: React.FC = () => {
   const [navPage, setNavPage] = useState<NavPage>('models');
@@ -114,6 +115,7 @@ export const App: React.FC = () => {
             [
               ['models', 'Models'],
               ['animations', 'Animations'],
+              ['verify', 'Verify'],
               ['modified', 'Modified'],
               ['parts', 'Parts'],
               ['reports', 'QA Reports'],
@@ -137,6 +139,15 @@ export const App: React.FC = () => {
 
       {error && <div className="error-banner">Failed to load manifest: {error}</div>}
 
+      {navPage === 'verify' ? (
+        <main className="main-layout">
+          <AnimationVerifier
+            characters={(manifest?.assets || []).filter(
+              (a) => a.category === 'Character' && Boolean(a.glbPath)
+            )}
+          />
+        </main>
+      ) : (
       <main className="main-layout">
         {/* Asset Library Sidebar / Collapsible Drawer on Mobile */}
         <aside className={`library-panel ${libraryOpen ? 'open' : 'collapsed'}`}>
@@ -455,13 +466,14 @@ export const App: React.FC = () => {
           )}
         </section>
       </main>
+      )}
 
       <nav className="mobile-bottom-nav" aria-label="Mobile Navigation">
         {(
           [
             ['models', 'Models'],
             ['animations', 'Anim'],
-            ['modified', 'Modified'],
+            ['verify', 'Verify'],
             ['parts', 'Parts'],
             ['reports', 'QA'],
           ] as [NavPage, string][]
