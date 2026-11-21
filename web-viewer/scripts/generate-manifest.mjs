@@ -61,6 +61,46 @@ if (fs.existsSync(reportsDir)) {
   }
 }
 
+// Also scan Upload/ for user-uploaded FBX models
+const uploadSrc = path.join(repoRoot, 'Upload');
+const uploadDst = path.join(publicDir, 'Upload');
+if (fs.existsSync(uploadSrc)) {
+  fs.cpSync(uploadSrc, uploadDst, { recursive: true, force: true });
+
+  const walkDir = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walkDir(full);
+      } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.fbx')) {
+        const rel = path.relative(repoRoot, full).split(path.sep).join('/');
+        const baseName = path.basename(entry.name, path.extname(entry.name));
+        const cat = rel.includes('Weapons') ? 'Weapon' : rel.includes('Character') ? 'Character' : 'Uploaded';
+        const size = fs.statSync(full).size;
+        assets.push({
+          id: `upload_${baseName}`,
+          name: `${baseName} (Upload)`,
+          category: cat,
+          version: '1.0.0',
+          targetEngine: 'Unity 6',
+          formats: ['FBX'],
+          previewPath: `./${rel}`,
+          fbxPath: `./${rel}`,
+          glbPath: '',
+          projectPath: '',
+          glbSizeBytes: 0,
+          fbxSizeBytes: size,
+          parameters: { source: rel },
+          components: [],
+          materials: [],
+          validation: null,
+        });
+      }
+    }
+  };
+  walkDir(uploadSrc);
+}
+
 const manifest = {
   generatedAt: new Date().toISOString(),
   totalAssets: assets.length,
