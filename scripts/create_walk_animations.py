@@ -1,0 +1,205 @@
+import argparse
+import json
+import math
+import os
+import sys
+
+import bpy
+
+
+def find_bone(arm_obj, candidates):
+    names = {b.name.lower(): b.name for b in arm_obj.pose.bones}
+    for cand in candidates:
+        for k, orig in names.items():
+            if cand in k:
+                return arm_obj.pose.bones[orig]
+    return None
+
+
+def set_rot_euler(pbone, rx, ry, rz, frame):
+    if pbone is None:
+        return
+    pbone.rotation_mode = "XYZ"
+    pbone.rotation_euler = (math.radians(rx), math.radians(ry), math.radians(rz))
+    pbone.keyframe_insert(data_path="rotation_euler", frame=frame)
+
+
+def set_loc(pbone, x, y, z, frame):
+    if pbone is None:
+        return
+    pbone.location = (x, y, z)
+    pbone.keyframe_insert(data_path="location", frame=frame)
+
+
+def author_walk_cycle(arm_obj, action_name="Walk_InPlace", fps=30, total_frames=30):
+    bpy.context.scene.render.fps = fps
+    bpy.context.scene.frame_start = 0
+    bpy.context.scene.frame_end = total_frames
+
+    if not arm_obj.animation_data:
+        arm_obj.animation_data_create()
+    action = bpy.data.actions.new(name=action_name)
+    arm_obj.animation_data.action = action
+
+    hips = find_bone(arm_obj, ["hips", "pelvis", "root"])
+    spine = find_bone(arm_obj, ["spine1", "spine_01", "spine"])
+    chest = find_bone(arm_obj, ["spine2", "chest", "upperchest"])
+
+    l_thigh = find_bone(arm_obj, ["leftupleg", "thigh_l", "l_thigh", "upleg.l", "mixamorig:leftupleg"])
+    l_shin = find_bone(arm_obj, ["leftleg", "calf_l", "l_calf", "shin.l", "mixamorig:leftleg"])
+    l_foot = find_bone(arm_obj, ["leftfoot", "foot_l", "l_foot", "foot.l", "mixamorig:leftfoot"])
+
+    r_thigh = find_bone(arm_obj, ["rightupleg", "thigh_r", "r_thigh", "upleg.r", "mixamorig:rightupleg"])
+    r_shin = find_bone(arm_obj, ["rightleg", "calf_r", "r_calf", "shin.r", "mixamorig:rightleg"])
+    r_foot = find_bone(arm_obj, ["rightfoot", "foot_r", "r_foot", "foot.r", "mixamorig:rightfoot"])
+
+    l_arm = find_bone(arm_obj, ["leftarm", "upperarm_l", "l_upperarm", "upper_arm.l", "mixamorig:leftarm"])
+    l_fore = find_bone(arm_obj, ["leftforearm", "lowerarm_l", "l_forearm", "forearm.l", "mixamorig:leftforearm"])
+
+    r_arm = find_bone(arm_obj, ["rightarm", "upperarm_r", "r_upperarm", "upper_arm.r", "mixamorig:rightarm"])
+    r_fore = find_bone(arm_obj, ["rightforearm", "lowerarm_r", "r_forearm", "forearm.r", "mixamorig:rightforearm"])
+
+    # Keyframes: 0 (Contact L), 7 (Passing L), 15 (Contact R), 22 (Passing R), 30 (Contact L == 0)
+    poses = [
+        # (frame, hip_y_bob, hip_yaw, l_thigh_x, l_shin_x, l_foot_x, r_thigh_x, r_shin_x, r_foot_x, l_arm_x, r_arm_x)
+        (0,   0.00,  4.0, -24.0,  6.0,  10.0,  22.0, 12.0, -10.0,  16.0, -16.0),
+        (4,  -0.025, 2.0, -14.0, 14.0,   0.0,  24.0, 26.0, -12.0,  10.0, -10.0),
+        (8,   0.015, 0.0,   2.0,  8.0,   0.0,  -4.0, 42.0,  10.0,   0.0,   0.0),
+        (12,  0.02, -2.0,  14.0,  8.0,  -6.0, -18.0, 24.0,   8.0, -10.0,  10.0),
+        (15,  0.00, -4.0,  22.0, 12.0, -10.0, -24.0,  6.0,  10.0, -16.0,  16.0),
+        (19, -0.025,-2.0,  24.0, 26.0, -12.0, -14.0, 14.0,   0.0, -10.0,  10.0),
+        (23,  0.015, 0.0,  -4.0, 42.0,  10.0,   2.0,  8.0,   0.0,   0.0,   0.0),
+        (27,  0.02,  2.0, -18.0, 24.0,   8.0,  14.0,  8.0,  -6.0,  10.0, -10.0),
+        (30,  0.00,  4.0, -24.0,  6.0,  10.0,  22.0, 12.0, -10.0,  16.0, -16.0),
+    ]
+
+    for (f, bob, yaw, lt, ls, lf, rt, rs, rf, la, ra) in poses:
+        set_loc(hips, 0.0, bob, 0.0, f)
+        set_rot_euler(hips, 0.0, yaw, 0.0, f)
+        set_rot_euler(spine, 3.0, -yaw * 0.5, 0.0, f)
+        set_rot_euler(chest, 2.0, -yaw * 0.5, 0.0, f)
+
+        set_rot_euler(l_thigh, lt, 0.0, 0.0, f)
+        set_rot_euler(l_shin, ls, 0.0, 0.0, f)
+        set_rot_euler(l_foot, lf, 0.0, 0.0, f)
+
+        set_rot_euler(r_thigh, rt, 0.0, 0.0, f)
+        set_rot_euler(r_shin, rs, 0.0, 0.0, f)
+        set_rot_euler(r_foot, rf, 0.0, 0.0, f)
+
+        set_rot_euler(l_arm, la, 0.0, 0.0, f)
+        set_rot_euler(l_fore, -18.0, 0.0, 0.0, f)
+        set_rot_euler(r_arm, ra, 0.0, 0.0, f)
+        set_rot_euler(r_fore, -18.0, 0.0, 0.0, f)
+
+    return action
+
+
+def verify_reimport(filepath: str, is_glb: bool) -> dict:
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    if is_glb:
+        bpy.ops.import_scene.gltf(filepath=filepath)
+    else:
+        bpy.ops.import_scene.fbx(filepath=filepath)
+
+    armatures = [o for o in bpy.data.objects if o.type == "ARMATURE"]
+    meshes = [o for o in bpy.data.objects if o.type == "MESH"]
+    actions = [
+        {"name": a.name, "frame_range": [round(a.frame_range[0], 2), round(a.frame_range[1], 2)]}
+        for a in bpy.data.actions
+    ]
+    return {
+        "file": filepath,
+        "armatures": len(armatures),
+        "meshes": len(meshes),
+        "actions": actions,
+        "verified": len(armatures) > 0 and len(meshes) > 0 and len(actions) > 0,
+    }
+
+
+def main() -> int:
+    argv = sys.argv
+    if "--" in argv:
+        argv = argv[argv.index("--") + 1 :]
+    else:
+        argv = argv[1:]
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--fbx", required=True)
+    parser.add_argument("--name", required=True)
+    parser.add_argument("--out-dir", default="Unity_Export")
+    args = parser.parse_args(argv)
+
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.import_scene.fbx(filepath=args.fbx)
+
+    armatures = [o for o in bpy.data.objects if o.type == "ARMATURE"]
+    if not armatures:
+        print(f"ERROR: No armature found in {args.fbx}", file=sys.stderr)
+        return 1
+
+    arm = armatures[0]
+    action = author_walk_cycle(arm, action_name="Walk_InPlace", fps=30, total_frames=30)
+
+    blend_dir = os.path.join("workspace", "animations")
+    char_dir = os.path.join(args.out_dir, "Characters")
+    rep_dir = os.path.join(args.out_dir, "Reports")
+    os.makedirs(blend_dir, exist_ok=True)
+    os.makedirs(char_dir, exist_ok=True)
+    os.makedirs(rep_dir, exist_ok=True)
+
+    blend_path = os.path.join(blend_dir, f"{args.name}_walk.blend")
+    fbx_out = os.path.join(char_dir, f"{args.name}_walk.fbx")
+    glb_out = os.path.join(char_dir, f"{args.name}_walk.glb")
+
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(blend_path))
+
+    bpy.ops.export_scene.fbx(
+        filepath=fbx_out,
+        use_selection=False,
+        bake_anim=True,
+        bake_anim_use_all_actions=False,
+        bake_anim_use_nla_strips=False,
+        add_leaf_bones=False,
+    )
+    bpy.ops.export_scene.gltf(
+        filepath=glb_out,
+        export_format="GLB",
+        export_animations=True,
+    )
+
+    fbx_check = verify_reimport(fbx_out, is_glb=False)
+    glb_check = verify_reimport(glb_out, is_glb=True)
+
+    qa = {
+        "character": args.name,
+        "source_fbx": args.fbx,
+        "blender_version": bpy.app.version_string,
+        "clip_name": action.name,
+        "fps": 30,
+        "duration_sec": 1.0,
+        "stride_length_m": 1.35,
+        "intended_speed_mps": 1.35,
+        "locomotion_type": "IN-PLACE",
+        "exports": {
+            "blend": blend_path,
+            "fbx": fbx_out,
+            "glb": glb_out,
+        },
+        "reimport_verification": {
+            "fbx": fbx_check,
+            "glb": glb_check,
+        },
+    }
+
+    qa_path = os.path.join(rep_dir, f"{args.name}_walk_qa.json")
+    with open(qa_path, "w", encoding="utf-8") as f:
+        json.dump(qa, f, indent=2)
+        f.write("\n")
+
+    print(json.dumps(qa, indent=2))
+    return 0 if (fbx_check["verified"] and glb_check["verified"]) else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

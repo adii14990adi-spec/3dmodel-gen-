@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ModelViewer } from './components/ModelViewer';
+import { AnimationClipInfo, CameraPreset, ModelViewer } from './components/ModelViewer';
 import { AssetEntry, AssetManifest, RuntimeGeometryStats } from './types/asset';
 
 type InspectorTab = 'geometry' | 'materials' | 'project' | 'quality';
@@ -16,8 +16,18 @@ export const App: React.FC = () => {
   const [showGrid, setShowGrid] = useState(true);
   const [showAxes, setShowAxes] = useState(true);
   const [resetSignal, setResetSignal] = useState(0);
+  const [cameraPreset, setCameraPreset] = useState<CameraPreset>('reset');
   const [activeTab, setActiveTab] = useState<InspectorTab>('geometry');
   const [runtimeStats, setRuntimeStats] = useState<RuntimeGeometryStats | null>(null);
+
+  const [clips, setClips] = useState<AnimationClipInfo[]>([]);
+  const [selectedClip, setSelectedClip] = useState<string>('');
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [loop, setLoop] = useState(true);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [scrubTime, setScrubTime] = useState<number | null>(null);
+  const [movePreview, setMovePreview] = useState(false);
 
   useEffect(() => {
     fetch('./manifest.json')
@@ -54,6 +64,12 @@ export const App: React.FC = () => {
     setSelectedAsset(asset);
     setPreviewFormat(asset.glbPath ? 'GLB' : 'FBX');
     setRuntimeStats(null);
+    setClips([]);
+    setSelectedClip('');
+    setCurrentTime(0);
+    setScrubTime(null);
+    setMovePreview(false);
+    setCameraPreset('reset');
   };
 
   const formatBytes = (bytes: number) => {
@@ -167,7 +183,25 @@ export const App: React.FC = () => {
                   </button>
                   <button
                     className="tool-btn"
-                    onClick={() => setResetSignal((n) => n + 1)}
+                    onClick={() => { setCameraPreset('front'); setResetSignal((n) => n + 1); }}
+                  >
+                    Front
+                  </button>
+                  <button
+                    className="tool-btn"
+                    onClick={() => { setCameraPreset('side'); setResetSignal((n) => n + 1); }}
+                  >
+                    Side
+                  </button>
+                  <button
+                    className="tool-btn"
+                    onClick={() => { setCameraPreset('rear'); setResetSignal((n) => n + 1); }}
+                  >
+                    Rear
+                  </button>
+                  <button
+                    className="tool-btn"
+                    onClick={() => { setCameraPreset('reset'); setResetSignal((n) => n + 1); }}
                   >
                     Reset
                   </button>
@@ -181,8 +215,85 @@ export const App: React.FC = () => {
                 showGrid={showGrid}
                 showAxes={showAxes}
                 resetSignal={resetSignal}
+                cameraPreset={cameraPreset}
+                selectedClip={selectedClip}
+                isPlaying={isPlaying}
+                loop={loop}
+                playbackSpeed={playbackSpeed}
+                scrubTime={scrubTime}
+                movePreview={movePreview}
+                intendedSpeed={1.35}
                 onStatsLoaded={setRuntimeStats}
+                onAnimationsLoaded={(loaded) => {
+                  setClips(loaded);
+                  if (loaded.length > 0) setSelectedClip(loaded[0].name);
+                }}
+                onTimeUpdate={(t) => setCurrentTime(t)}
               />
+
+              {clips.length > 0 && (
+                <div className="download-bar" style={{ alignItems: 'center' }}>
+                  <span className="badge">IN-PLACE · 1.35 m/s</span>
+                  <select
+                    className="tool-btn"
+                    value={selectedClip}
+                    onChange={(e) => setSelectedClip(e.target.value)}
+                  >
+                    {clips.map((c) => (
+                      <option key={c.name} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
+                  <button className="tool-btn active" onClick={() => setIsPlaying((p) => !p)}>
+                    {isPlaying ? 'Pause' : 'Play'}
+                  </button>
+                  <button
+                    className="tool-btn"
+                    onClick={() => {
+                      setScrubTime(0);
+                      setCurrentTime(0);
+                      setResetSignal((n) => n + 1);
+                    }}
+                  >
+                    Restart
+                  </button>
+                  <button className={`tool-btn ${loop ? 'active' : ''}`} onClick={() => setLoop((l) => !l)}>
+                    Loop
+                  </button>
+                  <select
+                    className="tool-btn"
+                    value={playbackSpeed}
+                    onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
+                  >
+                    <option value={0.25}>0.25x</option>
+                    <option value={0.5}>0.5x</option>
+                    <option value={1}>1x</option>
+                    <option value={1.5}>1.5x</option>
+                    <option value={2}>2x</option>
+                  </select>
+                  <button
+                    className={`tool-btn ${movePreview ? 'active' : ''}`}
+                    onClick={() => setMovePreview((m) => !m)}
+                  >
+                    Move Preview
+                  </button>
+                  <input
+                    type="range"
+                    min={0}
+                    max={clips.find((c) => c.name === selectedClip)?.duration || 1}
+                    step={0.01}
+                    value={currentTime}
+                    onChange={(e) => {
+                      const t = Number(e.target.value);
+                      setCurrentTime(t);
+                      setScrubTime(t);
+                    }}
+                    style={{ flex: '1 1 120px' }}
+                  />
+                  <span style={{ fontSize: '0.75rem', color: '#8b949e' }}>
+                    {currentTime.toFixed(2)}s / {(clips.find((c) => c.name === selectedClip)?.duration || 0).toFixed(2)}s
+                  </span>
+                </div>
+              )}
 
               {/* Download Bar */}
               <div className="download-bar">

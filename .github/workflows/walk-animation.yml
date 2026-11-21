@@ -1,0 +1,54 @@
+name: Walk Animation Authoring & Web Viewer Build
+
+on:
+  push:
+    branches: [ "arena/929b0950-3dmodel-gen" ]
+  workflow_dispatch:
+
+jobs:
+  author-walk-and-build-viewer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          blender --version
+      - name: Author & Verify Female & Male Walk Animations
+        run: |
+          blender --background --factory-startup --disable-autoexec \
+            --python scripts/create_walk_animations.py -- \
+            --fbx "Upload/Models /Character/Female/Superhero_Female_FullBody.fbx" \
+            --name "superhero_female"
+
+          blender --background --factory-startup --disable-autoexec \
+            --python scripts/create_walk_animations.py -- \
+            --fbx "Upload/Models /Character/Male/Superhero_Male_FullBody.fbx" \
+            --name "superhero_male"
+      - name: Setup Node.js & Build Web Viewer
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web-viewer/package-lock.json
+      - name: Build Web Viewer
+        working-directory: web-viewer
+        run: |
+          npm ci
+          npm run build
+      - name: Upload Walk Animation Exports & QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: walk-animation-exports
+          path: |
+            workspace/animations/
+            Unity_Export/Characters/*_walk.*
+            Unity_Export/Reports/*_walk_qa.json
+      - name: Upload Web Viewer Dist
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-viewer-dist
+          path: web-viewer/dist/
