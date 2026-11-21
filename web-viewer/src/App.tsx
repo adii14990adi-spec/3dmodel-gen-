@@ -3,8 +3,11 @@ import { AnimationClipInfo, CameraPreset, ModelViewer } from './components/Model
 import { AssetEntry, AssetManifest, RuntimeGeometryStats } from './types/asset';
 
 type InspectorTab = 'geometry' | 'materials' | 'project' | 'quality';
+type NavPage = 'models' | 'animations' | 'modified' | 'parts' | 'reports';
 
 export const App: React.FC = () => {
+  const [navPage, setNavPage] = useState<NavPage>('models');
+  const [sideOpen, setSideOpen] = useState(false);
   const [manifest, setManifest] = useState<AssetManifest | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -53,12 +56,19 @@ export const App: React.FC = () => {
   const filteredAssets = useMemo(() => {
     if (!manifest) return [];
     return manifest.assets.filter((a) => {
+      if (navPage === 'animations') {
+        const isAnim = Boolean(a.parameters?.clip_name) || a.id.includes('walk');
+        if (!isAnim) return false;
+      } else if (navPage === 'modified') {
+        const isMod = Boolean(a.parameters?.clip_name) || a.id.includes('walk');
+        if (!isMod) return false;
+      }
       const matchCat = category === 'All' || a.category === category;
       const matchSearch = a.name.toLowerCase().includes(search.toLowerCase()) ||
                           a.category.toLowerCase().includes(search.toLowerCase());
       return matchCat && matchSearch;
     });
-  }, [manifest, category, search]);
+  }, [manifest, category, search, navPage]);
 
   const handleSelectAsset = (asset: AssetEntry) => {
     setSelectedAsset(asset);
@@ -82,14 +92,44 @@ export const App: React.FC = () => {
     <div className="app-shell">
       <header className="top-bar">
         <div className="brand">
+          <button className="tool-btn" onClick={() => setSideOpen((o) => !o)} aria-label="Menu">
+            ☰
+          </button>
           <span className="brand-dot" />
           <span>Forge3D</span>
-          <span className="badge">Unity 6</span>
+          <span className="badge">{navPage.toUpperCase()}</span>
         </div>
         <div className="stats-pill">
           {manifest ? `${manifest.totalAssets} Assets` : 'Loading...'}
         </div>
       </header>
+
+      {sideOpen && (
+        <nav className="side-drawer">
+          {(
+            [
+              ['models', 'Models'],
+              ['animations', 'Animations'],
+              ['modified', 'Modified'],
+              ['parts', 'Parts'],
+              ['reports', 'QA Reports'],
+            ] as [NavPage, string][]
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              className={`side-nav-btn ${navPage === key ? 'active' : ''}`}
+              onClick={() => {
+                setNavPage(key);
+                if (key === 'parts') setActiveTab('geometry');
+                if (key === 'reports') setActiveTab('quality');
+                setSideOpen(false);
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+      )}
 
       {error && <div className="error-banner">Failed to load manifest: {error}</div>}
 
