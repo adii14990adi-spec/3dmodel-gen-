@@ -89,7 +89,7 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
     const height = container.clientHeight || 420;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#0d1117');
+    scene.background = new THREE.Color('#f0f3f6');
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.01, 2000);
@@ -126,7 +126,7 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
     dir2.position.set(-6, 4, -6);
     scene.add(dir2);
 
-    const grid = new THREE.GridHelper(20, 20, 0x30363d, 0x1c2128);
+    const grid = new THREE.GridHelper(20, 20, 0xb8c0c8, 0xd8dee4);
     scene.add(grid);
     gridRef.current = grid;
 
