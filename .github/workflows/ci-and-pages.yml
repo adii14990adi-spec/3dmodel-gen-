@@ -24,6 +24,33 @@ jobs:
       - name: Run C++ GoogleTest Suite
         run: ctest --test-dir build --output-on-failure
 
+  blender-integration:
+    needs: cpp-engine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          blender --version
+      - name: Build C++ Job CLI
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --target forge3d_job_cli -j
+      - name: Run Real C++ -> Blender Health-Check Round Trip
+        run: |
+          ./build/forge3d_job_cli worker-check
+          ./build/forge3d_job_cli submit-run contracts/examples/job_spec.valid.json
+          ./build/forge3d_job_cli status health-check-001
+          ./build/forge3d_job_cli logs health-check-001
+      - name: Upload Blender Health-Check Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blender-health-check-artifacts
+          path: workspace/jobs/health-check-001/
+
   web-viewer:
     runs-on: ubuntu-latest
     steps:
