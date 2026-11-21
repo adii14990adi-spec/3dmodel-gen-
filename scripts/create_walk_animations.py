@@ -31,6 +31,90 @@ def set_loc(pbone, x, y, z, frame):
     pbone.keyframe_insert(data_path="location", frame=frame)
 
 
+def author_idle_cycle(arm_obj, action_name="Idle", fps=30, total_frames=60):
+    if not arm_obj.animation_data:
+        arm_obj.animation_data_create()
+    action = bpy.data.actions.new(name=action_name)
+    arm_obj.animation_data.action = action
+
+    hips = find_bone(arm_obj, ["hips", "pelvis", "root"])
+    spine = find_bone(arm_obj, ["spine1", "spine_01", "spine"])
+    chest = find_bone(arm_obj, ["spine2", "chest", "upperchest"])
+    l_arm = find_bone(arm_obj, ["leftarm", "upperarm_l", "l_upperarm", "upper_arm.l", "mixamorig:leftarm"])
+    r_arm = find_bone(arm_obj, ["rightarm", "upperarm_r", "r_upperarm", "upper_arm.r", "mixamorig:rightarm"])
+
+    for f, breath, sway in [(0, 0.0, 0.0), (15, 1.5, 1.0), (30, 3.0, 0.0), (45, 1.5, -1.0), (60, 0.0, 0.0)]:
+        set_loc(hips, 0.0, breath * 0.003, 0.0, f)
+        set_rot_euler(hips, 0.0, sway, 0.0, f)
+        set_rot_euler(spine, breath * 0.8, 0.0, 0.0, f)
+        set_rot_euler(chest, breath * 1.2, 0.0, 0.0, f)
+        set_rot_euler(l_arm, 4.0, 0.0, 6.0 + breath * 0.5, f)
+        set_rot_euler(r_arm, 4.0, 0.0, -6.0 - breath * 0.5, f)
+    return action
+
+
+def author_run_cycle(arm_obj, action_name="Run_InPlace", fps=30, total_frames=20):
+    if not arm_obj.animation_data:
+        arm_obj.animation_data_create()
+    action = bpy.data.actions.new(name=action_name)
+    arm_obj.animation_data.action = action
+
+    hips = find_bone(arm_obj, ["hips", "pelvis", "root"])
+    spine = find_bone(arm_obj, ["spine1", "spine_01", "spine"])
+    l_thigh = find_bone(arm_obj, ["leftupleg", "thigh_l", "l_thigh", "upleg.l", "mixamorig:leftupleg"])
+    l_shin = find_bone(arm_obj, ["leftleg", "calf_l", "l_calf", "shin.l", "mixamorig:leftleg"])
+    r_thigh = find_bone(arm_obj, ["rightupleg", "thigh_r", "r_thigh", "upleg.r", "mixamorig:rightupleg"])
+    r_shin = find_bone(arm_obj, ["rightleg", "calf_r", "r_calf", "shin.r", "mixamorig:rightleg"])
+    l_arm = find_bone(arm_obj, ["leftarm", "upperarm_l", "l_upperarm", "upper_arm.l", "mixamorig:leftarm"])
+    l_fore = find_bone(arm_obj, ["leftforearm", "lowerarm_l", "l_forearm", "forearm.l", "mixamorig:leftforearm"])
+    r_arm = find_bone(arm_obj, ["rightarm", "upperarm_r", "r_upperarm", "upper_arm.r", "mixamorig:rightarm"])
+    r_fore = find_bone(arm_obj, ["rightforearm", "lowerarm_r", "r_forearm", "forearm.r", "mixamorig:rightforearm"])
+
+    poses = [
+        (0,  0.03,  6.0, -42.0, 18.0,  38.0, 55.0,  35.0, -35.0),
+        (5, -0.04,  0.0,  -8.0, 65.0,  15.0, 75.0,   0.0,   0.0),
+        (10, 0.03, -6.0,  38.0, 55.0, -42.0, 18.0, -35.0,  35.0),
+        (15,-0.04,  0.0,  15.0, 75.0,  -8.0, 65.0,   0.0,   0.0),
+        (20, 0.03,  6.0, -42.0, 18.0,  38.0, 55.0,  35.0, -35.0),
+    ]
+    for f, bob, yaw, lt, ls, rt, rs, la, ra in poses:
+        set_loc(hips, 0.0, bob, 0.0, f)
+        set_rot_euler(hips, 8.0, yaw, 0.0, f)
+        set_rot_euler(spine, 12.0, -yaw * 0.5, 0.0, f)
+        set_rot_euler(l_thigh, lt, 0.0, 0.0, f)
+        set_rot_euler(l_shin, ls, 0.0, 0.0, f)
+        set_rot_euler(r_thigh, rt, 0.0, 0.0, f)
+        set_rot_euler(r_shin, rs, 0.0, 0.0, f)
+        set_rot_euler(l_arm, la, 0.0, 0.0, f)
+        set_rot_euler(l_fore, -65.0, 0.0, 0.0, f)
+        set_rot_euler(r_arm, ra, 0.0, 0.0, f)
+        set_rot_euler(r_fore, -65.0, 0.0, 0.0, f)
+    return action
+
+
+def author_crouch_idle_cycle(arm_obj, action_name="Crouch_Idle", fps=30, total_frames=40):
+    if not arm_obj.animation_data:
+        arm_obj.animation_data_create()
+    action = bpy.data.actions.new(name=action_name)
+    arm_obj.animation_data.action = action
+
+    hips = find_bone(arm_obj, ["hips", "pelvis", "root"])
+    spine = find_bone(arm_obj, ["spine1", "spine_01", "spine"])
+    l_thigh = find_bone(arm_obj, ["leftupleg", "thigh_l", "l_thigh", "upleg.l", "mixamorig:leftupleg"])
+    l_shin = find_bone(arm_obj, ["leftleg", "calf_l", "l_calf", "shin.l", "mixamorig:leftleg"])
+    r_thigh = find_bone(arm_obj, ["rightupleg", "thigh_r", "r_thigh", "upleg.r", "mixamorig:rightupleg"])
+    r_shin = find_bone(arm_obj, ["rightleg", "calf_r", "r_calf", "shin.r", "mixamorig:rightleg"])
+
+    for f, b in [(0, 0.0), (20, 1.5), (40, 0.0)]:
+        set_loc(hips, 0.0, -0.32 + b * 0.005, 0.0, f)
+        set_rot_euler(spine, 18.0 + b, 0.0, 0.0, f)
+        set_rot_euler(l_thigh, -55.0, 0.0, 0.0, f)
+        set_rot_euler(l_shin, 95.0, 0.0, 0.0, f)
+        set_rot_euler(r_thigh, -55.0, 0.0, 0.0, f)
+        set_rot_euler(r_shin, 95.0, 0.0, 0.0, f)
+    return action
+
+
 def author_walk_cycle(arm_obj, action_name="Walk_InPlace", fps=30, total_frames=30):
     bpy.context.scene.render.fps = fps
     bpy.context.scene.frame_start = 0
@@ -139,7 +223,18 @@ def main() -> int:
         return 1
 
     arm = armatures[0]
-    action = author_walk_cycle(arm, action_name="Walk_InPlace", fps=30, total_frames=30)
+    walk_action = author_walk_cycle(arm, action_name="Walk_InPlace", fps=30, total_frames=30)
+    idle_action = author_idle_cycle(arm, action_name="Idle", fps=30, total_frames=60)
+    run_action = author_run_cycle(arm, action_name="Run_InPlace", fps=30, total_frames=20)
+    crouch_action = author_crouch_idle_cycle(arm, action_name="Crouch_Idle", fps=30, total_frames=40)
+
+    for act in [walk_action, idle_action, run_action, crouch_action]:
+        track = arm.animation_data.nla_tracks.new()
+        track.name = act.name
+        track.strips.new(act.name, int(act.frame_range[0]), act)
+
+    arm.animation_data.action = walk_action
+    action = walk_action
 
     blend_dir = os.path.join("workspace", "animations")
     char_dir = os.path.join(args.out_dir, "Characters")
