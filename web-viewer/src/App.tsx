@@ -8,6 +8,7 @@ type NavPage = 'models' | 'animations' | 'modified' | 'parts' | 'reports';
 export const App: React.FC = () => {
   const [navPage, setNavPage] = useState<NavPage>('models');
   const [sideOpen, setSideOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(true);
   const [manifest, setManifest] = useState<AssetManifest | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -80,6 +81,9 @@ export const App: React.FC = () => {
     setScrubTime(null);
     setMovePreview(false);
     setCameraPreset('reset');
+    if (window.innerWidth < 900) {
+      setLibraryOpen(false);
+    }
   };
 
   const formatBytes = (bytes: number) => {
@@ -134,9 +138,18 @@ export const App: React.FC = () => {
       {error && <div className="error-banner">Failed to load manifest: {error}</div>}
 
       <main className="main-layout">
-        {/* Asset Library Sidebar / Top Drawer on Mobile */}
-        <aside className="library-panel">
-          <div className="search-box">
+        {/* Asset Library Sidebar / Collapsible Drawer on Mobile */}
+        <aside className={`library-panel ${libraryOpen ? 'open' : 'collapsed'}`}>
+          <button
+            className="mobile-library-toggle"
+            onClick={() => setLibraryOpen((o) => !o)}
+          >
+            <span>Asset Library ({filteredAssets.length})</span>
+            <span>{libraryOpen ? '▲ Hide' : '▼ Show'}</span>
+          </button>
+
+          <div className="library-content">
+            <div className="search-box">
             <input
               type="search"
               placeholder="Search assets..."
@@ -177,6 +190,7 @@ export const App: React.FC = () => {
                 </div>
               </button>
             ))}
+          </div>
           </div>
         </aside>
 
@@ -441,6 +455,33 @@ export const App: React.FC = () => {
           )}
         </section>
       </main>
+
+      <nav className="mobile-bottom-nav" aria-label="Mobile Navigation">
+        {(
+          [
+            ['models', 'Models'],
+            ['animations', 'Anim'],
+            ['modified', 'Modified'],
+            ['parts', 'Parts'],
+            ['reports', 'QA'],
+          ] as [NavPage, string][]
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            className={`bottom-nav-btn ${navPage === key ? 'active' : ''}`}
+            onClick={() => {
+              setNavPage(key);
+              if (key === 'parts') setActiveTab('geometry');
+              if (key === 'reports') setActiveTab('quality');
+              if (key === 'models' || key === 'animations' || key === 'modified') {
+                setLibraryOpen(true);
+              }
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
     </div>
   );
 };

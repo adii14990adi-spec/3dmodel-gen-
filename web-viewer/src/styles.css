@@ -365,7 +365,70 @@ html, body, #root {
   font-size: 0.82rem;
 }
 
+.mobile-library-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.library-panel.collapsed .library-content {
+  display: none;
+}
+
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 6px 4px;
+  z-index: 50;
+}
+
+.bottom-nav-btn {
+  flex: 1;
+  min-height: 40px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.bottom-nav-btn.active {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+@media (max-width: 899px) {
+  .app-shell {
+    padding-bottom: 56px;
+  }
+}
+
 @media (min-width: 900px) {
+  .mobile-library-toggle,
+  .mobile-bottom-nav {
+    display: none;
+  }
+  .library-panel.collapsed .library-content {
+    display: block;
+  }
   .main-layout {
     flex-direction: row;
   }
