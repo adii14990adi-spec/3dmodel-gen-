@@ -1,0 +1,34 @@
+name: Character Readiness Inspection
+
+on:
+  push:
+    branches: [ "arena/929b0950-3dmodel-gen" ]
+  workflow_dispatch:
+
+jobs:
+  inspect-characters:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          blender --version
+      - name: Inspect Female & Male Characters
+        run: |
+          blender --background --factory-startup --disable-autoexec \
+            --python scripts/inspect_character.py -- \
+            --fbx "Upload/Models /Character/Female/Superhero_Female_FullBody.fbx" \
+            --out "inspection_reports/female_character.json"
+
+          blender --background --factory-startup --disable-autoexec \
+            --python scripts/inspect_character.py -- \
+            --fbx "Upload/Models /Character/Male/Superhero_Male_FullBody.fbx" \
+            --out "inspection_reports/male_character.json"
+      - name: Upload Inspection Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: character-inspection-reports
+          path: inspection_reports/

@@ -7,6 +7,13 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { RuntimeGeometryStats } from '../types/asset';
 
+export type CameraPreset = 'reset' | 'front' | 'side' | 'rear';
+
+export interface AnimationClipInfo {
+  name: string;
+  duration: number;
+}
+
 interface ModelViewerProps {
   modelUrl: string;
   format: 'GLB' | 'FBX' | 'OBJ' | 'STL';
@@ -14,7 +21,17 @@ interface ModelViewerProps {
   showGrid: boolean;
   showAxes: boolean;
   resetSignal: number;
+  cameraPreset?: CameraPreset;
+  selectedClip?: string;
+  isPlaying?: boolean;
+  loop?: boolean;
+  playbackSpeed?: number;
+  scrubTime?: number | null;
+  movePreview?: boolean;
+  intendedSpeed?: number;
   onStatsLoaded?: (stats: RuntimeGeometryStats) => void;
+  onAnimationsLoaded?: (clips: AnimationClipInfo[]) => void;
+  onTimeUpdate?: (time: number) => void;
 }
 
 export const ModelViewer: React.FC<ModelViewerProps> = ({
@@ -24,7 +41,17 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
   showGrid,
   showAxes,
   resetSignal,
+  cameraPreset = 'reset',
+  selectedClip,
+  isPlaying = true,
+  loop = true,
+  playbackSpeed = 1.0,
+  scrubTime = null,
+  movePreview = false,
+  intendedSpeed = 1.35,
   onStatsLoaded,
+  onAnimationsLoaded,
+  onTimeUpdate,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,6 +63,22 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
   const modelRootRef = useRef<THREE.Object3D | null>(null);
   const gridRef = useRef<THREE.GridHelper | null>(null);
   const axesRef = useRef<THREE.AxesHelper | null>(null);
+
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const actionsRef = useRef<Map<string, THREE.AnimationAction>>(new Map());
+  const activeActionRef = useRef<THREE.AnimationAction | null>(null);
+
+  const isPlayingRef = useRef(isPlaying);
+  const speedRef = useRef(playbackSpeed);
+  const movePreviewRef = useRef(movePreview);
+  const intendedSpeedRef = useRef(intendedSpeed);
+  const onTimeUpdateRef = useRef(onTimeUpdate);
+
+  isPlayingRef.current = isPlaying;
+  speedRef.current = playbackSpeed;
+  movePreviewRef.current = movePreview;
+  intendedSpeedRef.current = intendedSpeed;
+  onTimeUpdateRef.current = onTimeUpdate;
 
   // Initialize Three.js scene once
   useEffect(() => {
@@ -72,7 +115,6 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
     };
     controlsRef.current = controls;
 
-    // Lighting
     const hemi = new THREE.HemisphereLight(0xddeeff, 0x222831, 1.2);
     scene.add(hemi);
 
@@ -104,9 +146,31 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
     });
     ro.observe(container);
 
+    const clock = new THREE.Clock();
     let animId = 0;
+    let lastUiReport = 0;
+
     const animate = () => {
       animId = requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.1);
+
+      if (mixerRef.current && isPlayingRef.current) {
+        mixerRef.current.update(dt * speedRef.current);
+        if (activeActionRef.current && onTimeUpdateRef.current) {
+          const now = performance.now();
+          if (now - lastUiReport > 50) {
+            onTimeUpdateRef.current(activeActionRef.current.time);
+            lastUiReport = now;
+          }
+        }
+        if (movePreviewRef.current && modelRootRef.current) {
+          modelRootRef.current.position.z += dt * intendedSpeedRef.current * speedRef.current;
+          if (modelRootRef.current.position.z > 6.0) {
+            modelRootRef.current.position.z = -6.0;
+          }
+        }
+      }
+
       controls.update();
       renderer.render(scene, camera);
     };
@@ -120,13 +184,11 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
     };
   }, []);
 
-  // Toggle grid & axes
   useEffect(() => {
     if (gridRef.current) gridRef.current.visible = showGrid;
     if (axesRef.current) axesRef.current.visible = showAxes;
   }, [showGrid, showAxes]);
 
-  // Toggle wireframe
   useEffect(() => {
     if (!modelRootRef.current) return;
     modelRootRef.current.traverse((obj) => {
@@ -142,8 +204,7 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
     });
   }, [wireframe]);
 
-  // Frame camera to bounding box
-  const frameModel = (root: THREE.Object3D) => {
+  const frameModel = (root: THREE.Object3D, preset: CameraPreset = 'reset') => {
     const camera = cameraRef.current;
     const controls = controlsRef.current;
     if (!camera || !controls) return;
@@ -154,7 +215,16 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
     const maxDim = Math.max(size.x, size.y, size.z, 0.5);
     const dist = maxDim * 1.8;
 
-    camera.position.set(center.x + dist * 0.7, center.y + dist * 0.45, center.z + dist * 0.7);
+    if (preset === 'front') {
+      camera.position.set(center.x, center.y + dist * 0.15, center.z + dist);
+    } else if (preset === 'side') {
+      camera.position.set(center.x + dist, center.y + dist * 0.15, center.z);
+    } else if (preset === 'rear') {
+      camera.position.set(center.x, center.y + dist * 0.15, center.z - dist);
+    } else {
+      camera.position.set(center.x + dist * 0.7, center.y + dist * 0.45, center.z + dist * 0.7);
+    }
+
     camera.near = Math.max(0.01, maxDim * 0.005);
     camera.far = Math.max(200, maxDim * 25);
     camera.updateProjectionMatrix();
@@ -165,9 +235,33 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
 
   useEffect(() => {
     if (modelRootRef.current) {
-      frameModel(modelRootRef.current);
+      modelRootRef.current.position.set(0, 0, 0);
+      frameModel(modelRootRef.current, cameraPreset);
     }
-  }, [resetSignal]);
+  }, [resetSignal, cameraPreset]);
+
+  // Update active animation clip & loop mode
+  useEffect(() => {
+    const actions = actionsRef.current;
+    if (!actions.size || !selectedClip) return;
+    const nextAction = actions.get(selectedClip);
+    if (!nextAction) return;
+
+    if (activeActionRef.current && activeActionRef.current !== nextAction) {
+      activeActionRef.current.stop();
+    }
+    nextAction.setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce, Infinity);
+    nextAction.clampWhenFinished = !loop;
+    nextAction.play();
+    activeActionRef.current = nextAction;
+  }, [selectedClip, loop]);
+
+  // Scrubbing (updates pose even when paused)
+  useEffect(() => {
+    if (scrubTime === null || !mixerRef.current || !activeActionRef.current) return;
+    activeActionRef.current.time = scrubTime;
+    mixerRef.current.update(0);
+  }, [scrubTime]);
 
   // Load model when URL or format changes
   useEffect(() => {
@@ -177,6 +271,13 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
     let cancelled = false;
     setLoading(true);
     setError(null);
+
+    if (mixerRef.current) {
+      mixerRef.current.stopAllAction();
+      mixerRef.current = null;
+    }
+    actionsRef.current.clear();
+    activeActionRef.current = null;
 
     if (modelRootRef.current) {
       scene.remove(modelRootRef.current);
@@ -191,13 +292,30 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
       modelRootRef.current = null;
     }
 
-    const finalize = (root: THREE.Object3D, animCount = 0) => {
+    const finalize = (root: THREE.Object3D, animations: THREE.AnimationClip[] = []) => {
       if (cancelled) return;
       modelRootRef.current = root;
       scene.add(root);
-      frameModel(root);
+      frameModel(root, 'reset');
 
-      // Compute runtime stats
+      if (animations.length > 0) {
+        const mixer = new THREE.AnimationMixer(root);
+        mixerRef.current = mixer;
+        const clipInfos: AnimationClipInfo[] = [];
+        animations.forEach((clip) => {
+          const action = mixer.clipAction(clip);
+          actionsRef.current.set(clip.name, action);
+          clipInfos.push({ name: clip.name, duration: clip.duration });
+        });
+        const first = mixer.clipAction(animations[0]);
+        first.setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce, Infinity);
+        first.play();
+        activeActionRef.current = first;
+        onAnimationsLoaded?.(clipInfos);
+      } else {
+        onAnimationsLoaded?.([]);
+      }
+
       let meshes = 0;
       let vertices = 0;
       let triangles = 0;
@@ -237,7 +355,7 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
         vertices,
         triangles,
         materials: matSet.size,
-        animations: animCount,
+        animations: animations.length,
         boundingBox: {
           x: Number(size.x.toFixed(2)),
           y: Number(size.y.toFixed(2)),
@@ -256,25 +374,25 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
     if (format === 'GLB') {
       new GLTFLoader().load(
         modelUrl,
-        (gltf) => finalize(gltf.scene, gltf.animations?.length || 0),
+        (gltf) => finalize(gltf.scene, gltf.animations || []),
         undefined,
         onError
       );
     } else if (format === 'FBX') {
       new FBXLoader().load(
         modelUrl,
-        (fbx) => finalize(fbx, fbx.animations?.length || 0),
+        (fbx) => finalize(fbx, fbx.animations || []),
         undefined,
         onError
       );
     } else if (format === 'OBJ') {
-      new OBJLoader().load(modelUrl, (obj) => finalize(obj, 0), undefined, onError);
+      new OBJLoader().load(modelUrl, (obj) => finalize(obj, []), undefined, onError);
     } else if (format === 'STL') {
       new STLLoader().load(
         modelUrl,
         (geom) => {
           const mat = new THREE.MeshStandardMaterial({ color: 0x8b949e, roughness: 0.4, metalness: 0.3 });
-          finalize(new THREE.Mesh(geom, mat), 0);
+          finalize(new THREE.Mesh(geom, mat), []);
         },
         undefined,
         onError
