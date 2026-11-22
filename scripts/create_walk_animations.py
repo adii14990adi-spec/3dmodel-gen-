@@ -234,7 +234,16 @@ def main() -> int:
         track.strips.new(act.name, int(act.frame_range[0]), act)
 
     arm.animation_data.action = walk_action
-    action = walk_action
+    clip_name = walk_action.name
+    blender_version = bpy.app.version_string
+
+    # Limit to 4 bone influences and normalize on working copy
+    for obj in bpy.data.objects:
+        if obj.type == "MESH" and len(obj.vertex_groups) > 0:
+            bpy.context.view_layer.objects.active = obj
+            bpy.ops.object.mode_set(mode="OBJECT")
+            bpy.ops.object.vertex_group_limit_total(group_select_mode="ALL", limit=4)
+            bpy.ops.object.vertex_group_normalize_all(group_select_mode="ALL", lock_active=False)
 
     blend_dir = os.path.join("workspace", "animations")
     char_dir = os.path.join(args.out_dir, "Characters")
@@ -269,8 +278,8 @@ def main() -> int:
     qa = {
         "character": args.name,
         "source_fbx": args.fbx,
-        "blender_version": bpy.app.version_string,
-        "clip_name": action.name,
+        "blender_version": blender_version,
+        "clip_name": clip_name,
         "fps": 30,
         "duration_sec": 1.0,
         "stride_length_m": 1.35,
