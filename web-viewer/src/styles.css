@@ -421,7 +421,64 @@ html, body, #root {
   }
 }
 
+.verifier-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex: 1;
+}
+
+.verifier-sidebar {
+  padding: 10px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.verifier-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.verifier-section small {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.verifier-clips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.82rem;
+}
+
+.muted-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
 @media (min-width: 900px) {
+  .verifier-shell {
+    flex-direction: row;
+  }
+  .verifier-sidebar {
+    width: 320px;
+    border-bottom: none;
+    border-right: 1px solid var(--border);
+  }
   .mobile-library-toggle,
   .mobile-bottom-nav {
     display: none;

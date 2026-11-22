@@ -55,6 +55,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install Official Blender 4.2.3 LTS & Generate Walk Animations
+        run: |
+          curl -fsSL -A "Mozilla/5.0" https://mirrors.ocf.berkeley.edu/blender/release/Blender4.2/blender-4.2.3-linux-x64.tar.xz -o /tmp/blender.tar.xz
+          sudo mkdir -p /opt/blender-4.2.3
+          sudo tar -xf /tmp/blender.tar.xz -C /opt/blender-4.2.3 --strip-components=1
+          rm -f /tmp/blender.tar.xz
+          BLENDER_BIN="/opt/blender-4.2.3/blender"
+          "$BLENDER_BIN" --background --factory-startup --disable-autoexec \
+            --python-exit-code 1 \
+            --python-expr "import bpy, sys, numpy; print('Blender:', bpy.app.version_string); print('Python:', sys.version); print('NumPy:', numpy.__version__)"
+          "$BLENDER_BIN" --background --factory-startup --disable-autoexec \
+            --python-exit-code 1 \
+            --python scripts/create_walk_animations.py -- \
+            --fbx "Upload/Models /Character/Female/Superhero_Female_FullBody.fbx" \
+            --name "superhero_female"
+          "$BLENDER_BIN" --background --factory-startup --disable-autoexec \
+            --python-exit-code 1 \
+            --python scripts/create_walk_animations.py -- \
+            --fbx "Upload/Models /Character/Male/Superhero_Male_FullBody.fbx" \
+            --name "superhero_male"
+          test -s Unity_Export/Characters/superhero_female_walk.glb
+          test -s Unity_Export/Characters/superhero_male_walk.glb
+      - name: Upload Walk Animation Exports
+        uses: actions/upload-artifact@v4
+        with:
+          name: walk-animation-exports
+          if-no-files-found: error
+          path: |
+            Unity_Export/Characters/superhero_female_walk.glb
+            Unity_Export/Characters/superhero_male_walk.glb
+            Unity_Export/Characters/superhero_female_walk.fbx
+            Unity_Export/Characters/superhero_male_walk.fbx
+            Unity_Export/Reports/*_walk_qa.json
       - uses: actions/setup-node@v4
         with:
           node-version: 22
