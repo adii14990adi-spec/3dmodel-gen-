@@ -55,6 +55,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install Blender & Generate Walk Animations
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          blender --background --factory-startup --disable-autoexec \
+            --python scripts/create_walk_animations.py -- \
+            --fbx "Upload/Models /Character/Female/Superhero_Female_FullBody.fbx" \
+            --name "superhero_female"
+          blender --background --factory-startup --disable-autoexec \
+            --python scripts/create_walk_animations.py -- \
+            --fbx "Upload/Models /Character/Male/Superhero_Male_FullBody.fbx" \
+            --name "superhero_male"
+          test -s Unity_Export/Characters/superhero_female_walk.glb
+          test -s Unity_Export/Characters/superhero_male_walk.glb
+      - name: Upload Walk Animation Exports
+        uses: actions/upload-artifact@v4
+        with:
+          name: walk-animation-exports
+          if-no-files-found: error
+          path: |
+            Unity_Export/Characters/superhero_female_walk.glb
+            Unity_Export/Characters/superhero_male_walk.glb
+            Unity_Export/Characters/superhero_female_walk.fbx
+            Unity_Export/Characters/superhero_male_walk.fbx
+            Unity_Export/Reports/*_walk_qa.json
       - uses: actions/setup-node@v4
         with:
           node-version: 22
