@@ -58,12 +58,17 @@ jobs:
       - name: Install Blender & Generate Walk Animations
         run: |
           sudo apt-get update
-          sudo apt-get install -y blender
+          sudo apt-get install -y blender python3-numpy
           blender --background --factory-startup --disable-autoexec \
+            --python-exit-code 1 \
+            --python-expr "import bpy, sys, numpy; print('Blender:', bpy.app.version_string); print('Python:', sys.version); print('NumPy:', numpy.__version__)"
+          blender --background --factory-startup --disable-autoexec \
+            --python-exit-code 1 \
             --python scripts/create_walk_animations.py -- \
             --fbx "Upload/Models /Character/Female/Superhero_Female_FullBody.fbx" \
             --name "superhero_female"
           blender --background --factory-startup --disable-autoexec \
+            --python-exit-code 1 \
             --python scripts/create_walk_animations.py -- \
             --fbx "Upload/Models /Character/Male/Superhero_Male_FullBody.fbx" \
             --name "superhero_male"
