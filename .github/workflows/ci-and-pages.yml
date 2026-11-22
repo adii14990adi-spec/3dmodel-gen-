@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Official Blender 4.2.3 LTS & Generate Walk Animations
         run: |
-          curl -fsSL https://download.blender.org/release/Blender4.2/blender-4.2.3-linux-x64.tar.xz -o /tmp/blender.tar.xz
+          curl -fsSL -A "Mozilla/5.0" https://mirrors.ocf.berkeley.edu/blender/release/Blender4.2/blender-4.2.3-linux-x64.tar.xz -o /tmp/blender.tar.xz
           sudo mkdir -p /opt/blender-4.2.3
           sudo tar -xf /tmp/blender.tar.xz -C /opt/blender-4.2.3 --strip-components=1
           rm -f /tmp/blender.tar.xz
